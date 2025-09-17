@@ -15,6 +15,7 @@ class PositioningControl:
 
         self.grbl_streamer = GRBLStreamer()
         self.grbl_streamer.connect()
+        self.grbl_streamer.loop_method = self.dummy_loop  # Example loop method
         self.set_settings(self.operating_settings)
     
     def home(self):
@@ -86,7 +87,25 @@ class PositioningControl:
         common_feedrate = math.sqrt(fx**2 + fy**2 + fz**2)
         
         return x_dist, y_dist, common_feedrate
-
+    
+    def dummy_loop(self, previous_command: str):
+        """Example loop method to be assigned to GRBLStreamer.loop_method"""
+        if not previous_command:
+            return 'G1 X0 Y0 Z10 F500'  # Initial command
+        previous_coords = self.parse_move_command(previous_command)
+        return f'G1 X{previous_coords.get("X", 0)} Y{previous_coords.get("Y", 0)} Z{-previous_coords.get("Z", 0)} F{previous_coords.get("F", 0)}'
+    
+    def parse_move_command(self, command: str):
+        """Parse a G-code move command into its components."""
+        if not command.startswith('G1'):
+            raise ValueError("Only G1 commands are supported.")
+        parts = command.split(' ')
+        coords = {}
+        for part in parts[1:]:
+            axis = part[0]
+            value = float(part[1:])
+            coords[axis] = value
+        return coords
 
 class GRBLStreamer:
     def __init__(self, port=None, baudrate=115200, buffer_size=128):
@@ -104,8 +123,9 @@ class GRBLStreamer:
         self.cmd_queue = queue.Queue()
         self.used_buffer = 0
         self.lock = threading.Lock()
-
-        self.loop_base_gcode = None
+        self.sent_cmd_lengths = queue.Queue()  # Track lengths of sent commands
+        self.loop_method:callable = None
+        self.last_command:str = None
 
     def connect(self):
         self.ser = serial.Serial(self.port, self.baudrate)
@@ -132,6 +152,8 @@ class GRBLStreamer:
             raise ValueError("Unexpected startup message from GRBL: " + startup_msg)
     
     def send_command(self, cmd):
+        if not self.ser:
+            raise ConnectionError("Serial port not connected.")
         self.ser.write(f"{cmd}\n".encode())
         time.sleep(0.1)  # Wait for response
         response = self.ser.read_all().decode().strip()
@@ -140,11 +162,9 @@ class GRBLStreamer:
     def _send_loop(self):
         """Send G-code from queue, keeping GRBL buffer full."""
         while not self.stop_flag.is_set():
-            try:
-                cmd = self.cmd_queue.get(timeout=0.05)
-            except queue.Empty:
-                continue
-
+            print(f"last command: {self.last_command}")
+            cmd = self.loop_method(previous_command=self.last_command)
+            print(f"Generated command: {cmd}")
             while self.used_buffer + len(cmd) + 1 > self.buffer_size and not self.stop_flag.is_set():
                 time.sleep(0.01)
 
@@ -152,8 +172,11 @@ class GRBLStreamer:
                 break
 
             self.ser.write((cmd + "\n").encode())
+            self.last_command = cmd
             with self.lock:
-                self.used_buffer += len(cmd) + 1
+                cmd_len = len(cmd) + 1
+                self.used_buffer += cmd_len
+                self.sent_cmd_lengths.put(cmd_len)
 
         print("[GRBL] Send loop stopped.")
 
@@ -166,7 +189,9 @@ class GRBLStreamer:
                 if line.startswith("ok") or line.startswith("error"):
                     with self.lock:
                         # free space in buffer
-                        self.used_buffer = max(0, self.used_buffer - 1)
+                        if not self.sent_cmd_lengths.empty():
+                            cmd_len = self.sent_cmd_lengths.get()
+                            self.used_buffer = max(0, self.used_buffer - cmd_len)
                 if "ALARM" in line:
                     print("[GRBL] Alarm detected!")
                     self.stop_flag.set()
@@ -174,7 +199,12 @@ class GRBLStreamer:
 
     def start(self):
         """Start streaming threads."""
+        if not "Idle" in self.send_command('?'):
+            raise RuntimeError("GRBL not in Idle state. Cannot start streaming.")
+        if self.loop_method is None:
+            raise ValueError("No loop method defined for GRBLStreamer.")
         self.stop_flag.clear()
+        self.send_command('G91')  # Set to relative positioning before starting
         self.send_thread = threading.Thread(target=self._send_loop, daemon=True)
         self.read_thread = threading.Thread(target=self._read_loop, daemon=True)
         self.send_thread.start()
@@ -184,16 +214,48 @@ class GRBLStreamer:
         """Queue a G-code command for sending."""
         self.cmd_queue.put(gcode)
 
+    def pause(self):
+        """Pause streaming."""
+        if self.send_thread.is_alive() and self.read_thread.is_alive():
+            print("[GRBL] Not moving, cannot pause.")
+            return
+        print("[GRBL] Pausing...")
+        self.send_command('!')  # Pause command in GRBL
+    
+    def resume(self):
+        """Resume streaming."""
+        if not "Hold" in self.send_command('?'):
+            print("[GRBL] Not paused, cannot resume.")
+            return
+        print("[GRBL] Resuming...")
+        self.send_command('~')  # Resume command in GRBL
+
     def stop(self):
-        """Stop streaming."""
+        """Stop streaming and send soft reset to GRBL."""
         print("[GRBL] Stopping...")
         self.stop_flag.set()
+        self.soft_reset()
+        # Wait for threads to finish
         if self.send_thread:
             self.send_thread.join()
         if self.read_thread:
             self.read_thread.join()
-        print("[GRBL] All threads stopped.")
+        # Clear command queue and buffer
+        with self.lock:
+            while not self.cmd_queue.empty():
+                self.cmd_queue.get()
+            while not self.sent_cmd_lengths.empty():
+                self.sent_cmd_lengths.get()
+            self.used_buffer = 0
+        self.last_command = None
+        print("[GRBL] All threads stopped and buffers cleared.")
 
+    def soft_reset(self):
+        """Send soft reset to GRBL."""
+        print("[GRBL] Sending soft reset...")
+        self.send_command('\x18')  # Ctrl+X
+        self.send_command('$X')    # Unlock
+        
     def close(self):
         """Close serial port."""
         if self.ser:
@@ -212,6 +274,14 @@ class GRBLStreamer:
     def clear_stream(self):
         """Clear all messages from GRBL."""
         self.ser.read_all()
+    
+    def get_status(self):
+        """Get current status from GRBL."""
+        if self.ser:
+            self.ser.write(b'?\n')
+            time.sleep(0.001)  # Wait for response
+            response = self.ser.read_all().decode().strip()
+            return response
 
 if __name__ == "__main__":
     positioning_control = PositioningControl()
@@ -222,15 +292,49 @@ if __name__ == "__main__":
     # print(positioning_control.grbl_streamer.send_command('G91'))
     # print(positioning_control.grbl_streamer.send_command('G1 Z10 F1000'))
 
-    # Test multiaxis move
-    z_dist = -10  # mm
-    z_feedrate = 100  # mm/min
-    x_feedrate = 1  # mm/min (ml/h in fact)
-    y_feedrate = 1  # mm/min (ml/h in fact)
-    x_dist, y_dist, common_feedrate = PositioningControl.match_axes_by_feedrate(z_dist, z_feedrate, x_feedrate, y_feedrate)
-    print(f"Calculated distances: X={x_dist:.3f}, Y={y_dist:.3f}, Feedrate={common_feedrate:.3f}")
+    # Test Pause and Soft Reset
+    # positioning_control.grbl_streamer.send_command('$X') # Unlock the machine
+    # print(positioning_control.grbl_streamer.send_command('G91'))
+    # print(positioning_control.grbl_streamer.send_command('G1 Z20 F100'))
+    # print(positioning_control.grbl_streamer.send_command('?'))
+    # time.sleep(1)
+    # print(positioning_control.grbl_streamer.send_command('!'))  # Pause
+    # print(positioning_control.grbl_streamer.send_command('?'))
+    # time.sleep(2)
+    # print(positioning_control.grbl_streamer.send_command('~'))  # Resume
+    # print(positioning_control.grbl_streamer.send_command('?'))
+
+    # positioning_control.grbl_streamer.send_command('$X') # Unlock the machine
+    # print(positioning_control.grbl_streamer.send_command('G1 Z-20 F100'))
+    # print(positioning_control.grbl_streamer.send_command('?'))
+    # time.sleep(1)
+    # print(positioning_control.grbl_streamer.send_command('\x18'))  # Soft Reset
+    # print(positioning_control.grbl_streamer.send_command('?'))
+    # time.sleep(1)
+    # positioning_control.grbl_streamer.send_command('$X') # Unlock the machine
+    # print(positioning_control.grbl_streamer.send_command('?'))
+    # print(positioning_control.grbl_streamer.send_command('G91'))
+    # print(positioning_control.grbl_streamer.send_command('G1 Z10 F100'))
+    
+
+    # # Test multiaxis move
+    # z_dist = -10  # mm
+    # z_feedrate = 100  # mm/min
+    # x_feedrate = 1  # mm/min (ml/h in fact)
+    # y_feedrate = 1  # mm/min (ml/h in fact)
+    # x_dist, y_dist, common_feedrate = PositioningControl.match_axes_by_feedrate(z_dist, z_feedrate, x_feedrate, y_feedrate)
+    # print(f"Calculated distances: X={x_dist:.3f}, Y={y_dist:.3f}, Feedrate={common_feedrate:.3f}")
 
     # positioning_control.grbl_streamer.send_command('$X') # Unlock the machine
     # positioning_control.grbl_streamer.send_command('G91')
     # positioning_control.grbl_streamer.send_command(f'G1 X{x_dist:.3f} Y{y_dist:.3f} Z{z_dist:.3f} F{common_feedrate:.3f}')
 
+    # Test continuous looped movement
+    positioning_control.grbl_streamer.send_command('$X') # Unlock the machine
+    positioning_control.grbl_streamer.start()
+    time.sleep(10)  # Let it run for a while
+    positioning_control.grbl_streamer.pause()
+    time.sleep(10)  # Paused for a while
+    positioning_control.grbl_streamer.resume()
+    time.sleep(10)  # Let it run for a while
+    positioning_control.grbl_streamer.stop()
