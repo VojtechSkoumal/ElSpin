@@ -124,8 +124,9 @@ class GRBLStreamer:
         self.used_buffer = 0
         self.lock = threading.Lock()
         self.sent_cmd_lengths = queue.Queue()  # Track lengths of sent commands
-        self.loop_method:callable = None
-        self.last_command:str = None
+        self.loop_method = None
+        self.last_command = None
+        self.ser_communication_lock = threading.Lock()
 
     def connect(self):
         self.ser = serial.Serial(self.port, self.baudrate)
@@ -154,9 +155,10 @@ class GRBLStreamer:
     def send_command(self, cmd):
         if not self.ser:
             raise ConnectionError("Serial port not connected.")
-        self.ser.write(f"{cmd}\n".encode())
-        time.sleep(0.1)  # Wait for response
-        response = self.ser.read_all().decode().strip()
+        with self.ser_communication_lock:
+            self.ser.write(f"{cmd}\n".encode())
+            time.sleep(0.1)  # Wait for response
+            response = self.ser.read_all().decode().strip()
         return response
 
     def _send_loop(self):
@@ -171,7 +173,8 @@ class GRBLStreamer:
             if self.stop_flag.is_set():
                 break
 
-            self.ser.write((cmd + "\n").encode())
+            with self.ser_communication_lock:
+                self.ser.write((cmd + "\n").encode())
             self.last_command = cmd
             with self.lock:
                 cmd_len = len(cmd) + 1
@@ -216,7 +219,7 @@ class GRBLStreamer:
 
     def pause(self):
         """Pause streaming."""
-        if self.send_thread.is_alive() and self.read_thread.is_alive():
+        if not "Run" in self.send_command('?'):
             print("[GRBL] Not moving, cannot pause.")
             return
         print("[GRBL] Pausing...")
