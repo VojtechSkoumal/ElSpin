@@ -252,7 +252,7 @@ class GRBLStreamer:
                 self.sent_cmd_lengths.get()
             self.used_buffer = 0
             self.last_command = None
-        
+        self.send_command('$X')  # Unlock the machine
         print("[GRBL] All threads stopped and buffers cleared.")
 
     def soft_reset(self):
@@ -340,7 +340,6 @@ if __name__ == "__main__":
     time.sleep(5)  # Let it run for a while
     positioning_control.grbl_streamer.stop()
     time.sleep(5)  # Let it run for a while
-    positioning_control.grbl_streamer.send_command('$X') # Unlock the machine
     positioning_control.grbl_streamer.start()
     time.sleep(5)  # Let it run for a while
     positioning_control.grbl_streamer.stop()
