@@ -108,7 +108,7 @@ class PositioningControl:
         return coords
 
 class GRBLStreamer:
-    def __init__(self, port=None, baudrate=115200, buffer_size=128):
+    def __init__(self, port=None, baudrate=115200, buffer_size=64):
         self.port = port
         if not self.port:
             self.port = self.find_arduino_port()
@@ -122,7 +122,7 @@ class GRBLStreamer:
         self.stop_flag = threading.Event()
         self.cmd_queue = queue.Queue()
         self.used_buffer = 0
-        self.lock = threading.Lock()
+        self.buffer_data_lock = threading.Lock()
         self.sent_cmd_lengths = queue.Queue()  # Track lengths of sent commands
         self.loop_method = None
         self.last_command = None
@@ -164,9 +164,8 @@ class GRBLStreamer:
     def _send_loop(self):
         """Send G-code from queue, keeping GRBL buffer full."""
         while not self.stop_flag.is_set():
-            print(f"last command: {self.last_command}")
-            cmd = self.loop_method(previous_command=self.last_command)
-            print(f"Generated command: {cmd}")
+            with self.buffer_data_lock:
+                cmd = self.loop_method(previous_command=self.last_command)
             while self.used_buffer + len(cmd) + 1 > self.buffer_size and not self.stop_flag.is_set():
                 time.sleep(0.01)
 
@@ -175,22 +174,23 @@ class GRBLStreamer:
 
             with self.ser_communication_lock:
                 self.ser.write((cmd + "\n").encode())
-            self.last_command = cmd
-            with self.lock:
+            with self.buffer_data_lock:
                 cmd_len = len(cmd) + 1
                 self.used_buffer += cmd_len
                 self.sent_cmd_lengths.put(cmd_len)
+                self.last_command = cmd
 
         print("[GRBL] Send loop stopped.")
 
     def _read_loop(self):
         """Read GRBL responses and manage buffer space."""
         while not self.stop_flag.is_set():
-            line = self.ser.readline().decode().strip()
+            with self.ser_communication_lock:
+                line = self.ser.readline().decode().strip()
             if line:
-                print(f"< {line}")
+                print(f"Reader: {line}")
                 if line.startswith("ok") or line.startswith("error"):
-                    with self.lock:
+                    with self.buffer_data_lock:
                         # free space in buffer
                         if not self.sent_cmd_lengths.empty():
                             cmd_len = self.sent_cmd_lengths.get()
@@ -198,6 +198,7 @@ class GRBLStreamer:
                 if "ALARM" in line:
                     print("[GRBL] Alarm detected!")
                     self.stop_flag.set()
+            time.sleep(0.5)
         print("[GRBL] Read loop stopped.")
 
     def start(self):
@@ -217,21 +218,21 @@ class GRBLStreamer:
         """Queue a G-code command for sending."""
         self.cmd_queue.put(gcode)
 
-    def pause(self):
-        """Pause streaming."""
-        if not "Run" in self.send_command('?'):
-            print("[GRBL] Not moving, cannot pause.")
-            return
-        print("[GRBL] Pausing...")
-        self.send_command('!')  # Pause command in GRBL
+    # def pause(self):
+    #     """Pause streaming."""
+    #     if not "Run" in self.send_command('?'):
+    #         print("[GRBL] Not moving, cannot pause.")
+    #         return
+    #     print("[GRBL] Pausing...")
+    #     self.send_command('!')  # Pause command in GRBL
     
-    def resume(self):
-        """Resume streaming."""
-        if not "Hold" in self.send_command('?'):
-            print("[GRBL] Not paused, cannot resume.")
-            return
-        print("[GRBL] Resuming...")
-        self.send_command('~')  # Resume command in GRBL
+    # def resume(self):
+    #     """Resume streaming."""
+    #     if not "Hold" in self.send_command('?'):
+    #         print("[GRBL] Not paused, cannot resume.")
+    #         return
+    #     print("[GRBL] Resuming...")
+    #     self.send_command('~')  # Resume command in GRBL
 
     def stop(self):
         """Stop streaming and send soft reset to GRBL."""
@@ -244,13 +245,14 @@ class GRBLStreamer:
         if self.read_thread:
             self.read_thread.join()
         # Clear command queue and buffer
-        with self.lock:
+        with self.buffer_data_lock:
             while not self.cmd_queue.empty():
                 self.cmd_queue.get()
             while not self.sent_cmd_lengths.empty():
                 self.sent_cmd_lengths.get()
             self.used_buffer = 0
-        self.last_command = None
+            self.last_command = None
+        
         print("[GRBL] All threads stopped and buffers cleared.")
 
     def soft_reset(self):
@@ -335,9 +337,11 @@ if __name__ == "__main__":
     # Test continuous looped movement
     positioning_control.grbl_streamer.send_command('$X') # Unlock the machine
     positioning_control.grbl_streamer.start()
-    time.sleep(10)  # Let it run for a while
-    positioning_control.grbl_streamer.pause()
-    time.sleep(10)  # Paused for a while
-    positioning_control.grbl_streamer.resume()
-    time.sleep(10)  # Let it run for a while
+    time.sleep(5)  # Let it run for a while
     positioning_control.grbl_streamer.stop()
+    time.sleep(5)  # Let it run for a while
+    positioning_control.grbl_streamer.send_command('$X') # Unlock the machine
+    positioning_control.grbl_streamer.start()
+    time.sleep(5)  # Let it run for a while
+    positioning_control.grbl_streamer.stop()
+
