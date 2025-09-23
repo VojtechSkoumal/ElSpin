@@ -1,0 +1,27 @@
+# virtual envs
+.venv
+venv
+env
+ENV
+
+# IDE
+.idea
+.vscode
+
+__pycache__
+*.pyc
+
+Autoscript
+
+# configuration matixes
+*.yml
+
+# generated ui files
+mainwindow.py
+
+# test files
+test.py
+test_*.py
+
+# local config
+ConfigFileLocal.ini
