@@ -225,12 +225,21 @@ class MPDController:
         # data part is after '='
         val_str = resp[1:]
         try:
-            return int(val_str, 16)
+            status_vals = bin(int(val_str, 16))[2:].zfill(8)
+            status = {
+                "Enabled": status_vals[7],
+                "Fault": status_vals[6],
+                "Over Voltage": status_vals[5],
+                "Over Current": status_vals[4],
+                "Over Temperature": status_vals[3],
+                "Supply Rail": status_vals[2],
+                "Hardware Enable": status_vals[1],
+                "Software Enable": status_vals[0],
+            }
+            return status
         except ValueError:
             raise MPDControllerError(f"Cannot parse status register: {val_str}")
 
-    # Add more methods similarly: get_voltage_monitor, get_current_monitor, etc.
-    # For example:
     def get_voltage_monitor(self) -> float:
         resp = self._send_command(cmd="M0", operator="?", data="")
         if not resp.startswith('='):
