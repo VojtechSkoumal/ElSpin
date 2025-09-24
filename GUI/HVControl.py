@@ -34,12 +34,14 @@ class MPDController:
     def close(self):
         if self.ser.is_open:
             self.ser.close()
+            time.sleep(0.1)
+        if self.ser.is_open:
+            raise MPDControllerError("Failed to close serial port")
 
     def _detect_port(self):
         import serial.tools.list_ports
         ports = serial.tools.list_ports.comports()
         for port in ports:
-            print(port.description)
             if "CH340" in port.description:
                 return port.device
         raise MPDControllerError("Could not auto-detect serial port")
@@ -258,11 +260,6 @@ if __name__ == "__main__":
     # Example usage
     mpd = MPDController()
     try:
-        print("Voltage:", mpd.get_voltage())
-        mpd.set_voltage(2500.0)  # 2.5kV
-        print("New voltage:", mpd.get_voltage())
-        mpd.set_voltage(0)  # 0kV
-        print("New voltage2:", mpd.get_voltage())
-        # mpd.set_enable_state(True)
+        print("Status:", mpd.get_status())
     finally:
         mpd.close()
