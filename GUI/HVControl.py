@@ -254,7 +254,6 @@ class MPDController:
             raise MPDControllerError(f"Unexpected response {resp}")
         return float(resp[1:])
 
-    # etc.
 
 if __name__ == "__main__":
     # Example usage
