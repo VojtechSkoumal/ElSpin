@@ -16,7 +16,7 @@ class LEDControlBhv:
         self.set_button_text()
 
     def connections(self):
-        self.ui.ledButton.clicked.connect(self.toggle_leds)
+        self.ui.LED_power_pushButton.clicked.connect(self.toggle_leds)
     
     def toggle_leds(self):
         self.led_on = not self.led_on
@@ -24,4 +24,4 @@ class LEDControlBhv:
         self.set_button_text()
 
     def set_button_text(self):
-        self.ui.ledButton.setText(f'Power LEDs {"OFF" if self.led_on else "ON"}')
+        self.ui.LED_power_pushButton.setText(f'Power LEDs {"OFF" if self.led_on else "ON"}')
