@@ -13,7 +13,7 @@ class LEDControlBhv:
         self.connections()
     
     def init(self):
-        self.set_button_text()
+        self.update_labels()
 
     def connections(self):
         self.ui.LED_power_pushButton.clicked.connect(self.toggle_leds)
@@ -21,7 +21,8 @@ class LEDControlBhv:
     def toggle_leds(self):
         self.led_on = not self.led_on
         self.gpio_controller.enable_LED_power(self.led_on)
-        self.set_button_text()
+        self.update_labels()
 
-    def set_button_text(self):
+    def update_labels(self):
         self.ui.LED_power_pushButton.setText(f'Power LEDs {"OFF" if self.led_on else "ON"}')
+        self.ui.LED_state_label.setText(f'{"ON" if self.led_on else "OFF"}')
