@@ -90,5 +90,7 @@ if __name__ == "__main__":
         elspin_ui.show()
     except Exception as ex:
         logger.error(ex)
+    finally:
+        elspin_ui.gpio_controller.cleanup()
 
     elspin_ui.close()
