@@ -6,7 +6,7 @@ import queue
 import math
 import numpy as np
 
-from GRBLSettings import OPERATING_SETTINGS
+from GUI.GRBLSettings import OPERATING_SETTINGS
 
 
 class PositioningController:
