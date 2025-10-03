@@ -55,9 +55,9 @@ if __name__ == "__main__":
     # Example usage
     gpio = GPIOController()
     try:
-        gpio.enable_HV_power(True)
+        gpio.enable_LED_power(True)
         time.sleep(10)
-        gpio.enable_HV_power(False)
+        gpio.enable_LED_power(False)
     finally:
         gpio.cleanup()
 

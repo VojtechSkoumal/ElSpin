@@ -1,10 +1,11 @@
 import serial
 import time
 
-class MPDControllerError(Exception):
+
+class HVControllerError(Exception):
     pass
 
-class MPDController:
+class HVController:
     def __init__(self, port: str = None, baudrate: int = 9600, addr: str = "01", devtype: str = "09", timeout: float = 1.0):
         """
         Initialize the controller.
@@ -36,7 +37,7 @@ class MPDController:
             self.ser.close()
             time.sleep(0.1)
         if self.ser.is_open:
-            raise MPDControllerError("Failed to close serial port")
+            raise HVControllerError("Failed to close serial port")
 
     def _detect_port(self):
         import serial.tools.list_ports
@@ -44,7 +45,7 @@ class MPDController:
         for port in ports:
             if "CH340" in port.description:
                 return port.device
-        raise MPDControllerError("Could not auto-detect serial port")
+        raise HVControllerError("Could not auto-detect serial port")
 
     def _checksum(self, addr: str, devtype: str, cmd: str, operator: str, data: str = "") -> str:
         """
@@ -88,16 +89,16 @@ class MPDController:
         # read until LF
         resp = self.ser.read_until(b'\n')
         if not resp:
-            raise MPDControllerError("No response from device")
+            raise HVControllerError("No response from device")
         # resp is bytes, decode
         try:
             resp_ascii = resp.decode('ascii')
         except UnicodeDecodeError:
-            raise MPDControllerError(f"Non‐ASCII response: {resp!r}")
+            raise HVControllerError(f"Non‐ASCII response: {resp!r}")
 
         # Response should begin with STX
         if not resp_ascii.startswith(chr(0x02)):
-            raise MPDControllerError(f"Invalid start of response: {resp_ascii!r}")
+            raise HVControllerError(f"Invalid start of response: {resp_ascii!r}")
 
         # Strip STX and LF
         body = resp_ascii[1:].rstrip('\n').rstrip('\r')
@@ -107,7 +108,7 @@ class MPDController:
         # Format: <ADDR><DEVTYPE><CMD><OPERATOR><DATA><CSUM>
         # We'll extract ADDR, DEVTYPE, CMD (2 chars each), operator (1 char), then data (variable), then csum (last 2 chars)
         if len(body) < (2 + 2 + 2 + 1 + 2):  # minimal length
-            raise MPDControllerError(f"Response too short: {body!r}")
+            raise HVControllerError(f"Response too short: {body!r}")
 
         addr_r = body[0:2]
         devtype_r = body[2:4]
@@ -121,12 +122,12 @@ class MPDController:
         # Optionally verify addr/devtype match
         if addr_r != self.addr or devtype_r != self.devtype or cmd_r != cmd:
             # maybe the device is different? We can warn or error
-            raise MPDControllerError(f"Unexpected response header: addr/devtype/cmd mismatch: got {addr_r},{devtype_r},{cmd_r}")
+            raise HVControllerError(f"Unexpected response header: addr/devtype/cmd mismatch: got {addr_r},{devtype_r},{cmd_r}")
 
         # Compute expected checksum for the response
         expected = self._checksum(addr_r, devtype_r, cmd_r, operator_r, data_r)
         if expected.upper() != csum_r.upper():
-            raise MPDControllerError(f"Checksum mismatch: expected {expected}, got {csum_r}")
+            raise HVControllerError(f"Checksum mismatch: expected {expected}, got {csum_r}")
 
         # Data operator is '=' for responses with data, '*' for invalid command, etc.
         return operator_r + data_r  # e.g. "=02500.0"
@@ -143,12 +144,12 @@ class MPDController:
         resp = self._send_command(cmd="V1", operator="?", data="")
         # resp should start with '=', then data
         if not resp.startswith('='):
-            raise MPDControllerError(f"Unexpected response {resp}")
+            raise HVControllerError(f"Unexpected response {resp}")
         val_str = resp[1:]
         try:
             return float(val_str)
         except ValueError:
-            raise MPDControllerError(f"Cannot parse voltage value: {val_str}")
+            raise HVControllerError(f"Cannot parse voltage value: {val_str}")
 
     def set_voltage(self, volts: float) -> None:
         """
@@ -164,7 +165,7 @@ class MPDController:
         # Optionally check that the echo or response matches
         # The protocol says the unit should respond with same command to confirm
         if not resp.startswith('='):
-            raise MPDControllerError(f"Unexpected response to set_voltage: {resp}")
+            raise HVControllerError(f"Unexpected response to set_voltage: {resp}")
         # we could return the set value
         # Optionally parse the returned value if needed
 
@@ -175,12 +176,12 @@ class MPDController:
         """
         resp = self._send_command(cmd="I1", operator="?", data="")
         if not resp.startswith('='):
-            raise MPDControllerError(f"Unexpected response {resp}")
+            raise HVControllerError(f"Unexpected response {resp}")
         val_str = resp[1:]
         try:
             return float(val_str)
         except ValueError:
-            raise MPDControllerError(f"Cannot parse current limit: {val_str}")
+            raise HVControllerError(f"Cannot parse current limit: {val_str}")
 
     def set_current_limit(self, current: float) -> None:
         """
@@ -189,7 +190,7 @@ class MPDController:
         data = f"{current:07.1f}"  # example formatting
         resp = self._send_command(cmd="I1", operator="=", data=data)
         if not resp.startswith('='):
-            raise MPDControllerError(f"Unexpected response to set_current_limit: {resp}")
+            raise HVControllerError(f"Unexpected response to set_current_limit: {resp}")
 
     def read_enable_state(self) -> bool:
         """
@@ -198,14 +199,14 @@ class MPDController:
         """
         resp = self._send_command(cmd="EN", operator="?", data="")
         if not resp.startswith('='):
-            raise MPDControllerError(f"Unexpected response {resp}")
+            raise HVControllerError(f"Unexpected response {resp}")
         val = resp[1:]
         if val == '1':
             return True
         elif val == '0':
             return False
         else:
-            raise MPDControllerError(f"Unexpected EN value: {val}")
+            raise HVControllerError(f"Unexpected EN value: {val}")
 
     def set_enable_state(self, enable: bool) -> None:
         """
@@ -214,7 +215,7 @@ class MPDController:
         val = '1' if enable else '0'
         resp = self._send_command(cmd="EN", operator="=", data=val)
         if not resp.startswith('='):
-            raise MPDControllerError(f"Unexpected response to set_enable_state: {resp}")
+            raise HVControllerError(f"Unexpected response to set_enable_state: {resp}")
 
     def get_status(self) -> int:
         """
@@ -223,7 +224,7 @@ class MPDController:
         """
         resp = self._send_command(cmd="SR", operator="?", data="")
         if not resp.startswith('='):
-            raise MPDControllerError(f"Unexpected response {resp}")
+            raise HVControllerError(f"Unexpected response {resp}")
         # data part is after '='
         val_str = resp[1:]
         try:
@@ -240,24 +241,24 @@ class MPDController:
             }
             return status
         except ValueError:
-            raise MPDControllerError(f"Cannot parse status register: {val_str}")
+            raise HVControllerError(f"Cannot parse status register: {val_str}")
 
     def get_voltage_monitor(self) -> float:
         resp = self._send_command(cmd="M0", operator="?", data="")
         if not resp.startswith('='):
-            raise MPDControllerError(f"Unexpected response {resp}")
+            raise HVControllerError(f"Unexpected response {resp}")
         return float(resp[1:])
 
     def get_current_monitor(self) -> float:
         resp = self._send_command(cmd="M1", operator="?", data="")
         if not resp.startswith('='):
-            raise MPDControllerError(f"Unexpected response {resp}")
+            raise HVControllerError(f"Unexpected response {resp}")
         return float(resp[1:])
 
 
 if __name__ == "__main__":
     # Example usage
-    mpd = MPDController()
+    mpd = HVController()
     try:
         print("Status:", mpd.get_status())
     finally:

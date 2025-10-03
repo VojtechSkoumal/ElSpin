@@ -23,7 +23,7 @@
       <widget class="QWidget" name="main_widget" native="true">
        <layout class="QHBoxLayout" name="horizontalLayout">
         <property name="spacing">
-         <number>7</number>
+         <number>0</number>
         </property>
         <property name="leftMargin">
          <number>0</number>
@@ -38,119 +38,169 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QSplitter" name="main_widget_splitter">
+         <widget class="QSplitter" name="splitter">
           <property name="orientation">
            <enum>Qt::Orientation::Horizontal</enum>
           </property>
-          <widget class="QGroupBox" name="HV_groupBox">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="title">
-            <string>High Voltage Control</string>
-           </property>
-           <layout class="QGridLayout" name="gridLayout">
-            <item row="2" column="1">
-             <widget class="QPushButton" name="HV_connect_pushButton">
-              <property name="enabled">
-               <bool>false</bool>
+          <widget class="QWidget" name="HV_LED_widget" native="true">
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QGroupBox" name="LED_groupBox">
+              <property name="title">
+               <string>LED Control</string>
               </property>
-              <property name="text">
-               <string>Connect</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QCheckBox" name="HV_power_checkBox">
-              <property name="text">
-               <string>Power</string>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="0" colspan="2">
-             <spacer name="HV_verticalSpacer">
-              <property name="orientation">
-               <enum>Qt::Orientation::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-            <item row="3" column="0" colspan="2">
-             <widget class="QGroupBox" name="HV_connected_groupBox">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <layout class="QGridLayout" name="gridLayout_2">
-               <property name="leftMargin">
-                <number>0</number>
-               </property>
-               <property name="topMargin">
-                <number>0</number>
-               </property>
-               <property name="rightMargin">
-                <number>0</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
-               </property>
-               <property name="spacing">
-                <number>6</number>
-               </property>
-               <item row="0" column="0" colspan="3">
-                <widget class="QLabel" name="HV_live_voltage_label">
+              <layout class="QGridLayout" name="gridLayout_8">
+               <item row="0" column="1">
+                <widget class="QPushButton" name="LED_power_pushButton">
+                 <property name="text">
+                  <string>Power LEDs ON</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="0" column="0">
+                <widget class="QLabel" name="LED_state_label">
                  <property name="styleSheet">
-                  <string notr="true">font: 24pt &quot;Segoe UI&quot;;</string>
+                  <string notr="true">font: 900 9pt &quot;Segoe UI&quot;;</string>
                  </property>
                  <property name="text">
-                  <string>Voltage: NaN V</string>
-                 </property>
-                 <property name="textFormat">
-                  <enum>Qt::TextFormat::PlainText</enum>
+                  <string>OFF</string>
                  </property>
                  <property name="alignment">
                   <set>Qt::AlignmentFlag::AlignCenter</set>
                  </property>
                 </widget>
                </item>
-               <item row="1" column="0">
-                <widget class="QLabel" name="HV_target_voltage_label">
-                 <property name="text">
-                  <string>Target Voltage [V]:</string>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="HV_groupBox">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="title">
+               <string>High Voltage Control</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayout">
+               <item row="4" column="0" colspan="2">
+                <spacer name="HV_verticalSpacer">
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Vertical</enum>
                  </property>
-                 <property name="alignment">
-                  <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>20</width>
+                   <height>40</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item row="3" column="0" colspan="2">
+                <widget class="QGroupBox" name="HV_connected_groupBox">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <layout class="QGridLayout" name="gridLayout_2">
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="spacing">
+                   <number>6</number>
+                  </property>
+                  <item row="0" column="0" colspan="3">
+                   <widget class="QLabel" name="HV_live_voltage_label">
+                    <property name="styleSheet">
+                     <string notr="true">font: 24pt &quot;Segoe UI&quot;;</string>
+                    </property>
+                    <property name="text">
+                     <string>Voltage: NaN V</string>
+                    </property>
+                    <property name="textFormat">
+                     <enum>Qt::TextFormat::PlainText</enum>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="0">
+                   <widget class="QLabel" name="HV_target_voltage_label">
+                    <property name="text">
+                     <string>Target Voltage [V]:</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="1">
+                   <widget class="QSpinBox" name="spinBox">
+                    <property name="maximum">
+                     <number>30000</number>
+                    </property>
+                    <property name="singleStep">
+                     <number>1000</number>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="2">
+                   <widget class="QPushButton" name="HV_set_target_voltage_pushButton">
+                    <property name="text">
+                     <string>Set</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="2" column="0" colspan="3">
+                   <widget class="QPushButton" name="HV_enable_pushButton">
+                    <property name="text">
+                     <string>Enable</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QCheckBox" name="HV_power_checkBox">
+                 <property name="text">
+                  <string>Power</string>
                  </property>
                 </widget>
                </item>
-               <item row="1" column="1">
-                <widget class="QSpinBox" name="spinBox">
-                 <property name="maximum">
-                  <number>30000</number>
+               <item row="2" column="1">
+                <widget class="QPushButton" name="HV_connect_pushButton">
+                 <property name="enabled">
+                  <bool>false</bool>
                  </property>
-                 <property name="singleStep">
-                  <number>1000</number>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="2">
-                <widget class="QPushButton" name="HV_set_target_voltage_pushButton">
                  <property name="text">
-                  <string>Set</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="0" colspan="3">
-                <widget class="QPushButton" name="HV_enable_pushButton">
-                 <property name="text">
-                  <string>Enable</string>
+                  <string>Connect</string>
                  </property>
                 </widget>
                </item>
@@ -170,6 +220,23 @@
             <string>Positioning Control</string>
            </property>
            <layout class="QGridLayout" name="gridLayout_3">
+            <item row="0" column="0">
+             <widget class="QCheckBox" name="positioning_power_checkBox">
+              <property name="text">
+               <string>Power</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QPushButton" name="positioning_home_pushButton">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Home</string>
+              </property>
+             </widget>
+            </item>
             <item row="1" column="0" colspan="2">
              <widget class="QWidget" name="positioning_homing_done_widget" native="true">
               <property name="enabled">
@@ -432,23 +499,6 @@
                 </widget>
                </item>
               </layout>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QPushButton" name="positioning_home_pushButton">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>Home</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="0">
-             <widget class="QCheckBox" name="positioning_power_checkBox">
-              <property name="text">
-               <string>Power</string>
-              </property>
              </widget>
             </item>
             <item row="2" column="0">

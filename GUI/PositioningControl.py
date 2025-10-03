@@ -9,7 +9,7 @@ import numpy as np
 from GRBLSettings import OPERATING_SETTINGS
 
 
-class PositioningControl:
+class PositioningController:
     def __init__(self):
         self.operating_settings = OPERATING_SETTINGS
 
@@ -289,7 +289,7 @@ class GRBLStreamer:
             return response
 
 if __name__ == "__main__":
-    positioning_control = PositioningControl()
+    positioning_control = PositioningController()
 
     # # Test homing and move
     # positioning_control.home()
