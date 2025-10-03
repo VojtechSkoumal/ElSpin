@@ -24,28 +24,28 @@ class GPIOController:
             GPIO.setup(self.positioning_power_enable_pin, GPIO.OUT)
             GPIO.setup(self.rotation_power_enable_pin, GPIO.OUT)
 
-            GPIO.output(self.HV_power_enable_pin, GPIO.LOW)
-            GPIO.output(self.HV_enable_pin, GPIO.LOW)
-            GPIO.output(self.LED_power_enable_pin, GPIO.LOW)
-            GPIO.output(self.positioning_power_enable_pin, GPIO.LOW)
-            GPIO.output(self.rotation_power_enable_pin, GPIO.LOW)
+            GPIO.output(self.HV_power_enable_pin, GPIO.HIGH)
+            GPIO.output(self.HV_enable_pin, GPIO.HIGH)
+            GPIO.output(self.LED_power_enable_pin, GPIO.HIGH)
+            GPIO.output(self.positioning_power_enable_pin, GPIO.HIGH)
+            GPIO.output(self.rotation_power_enable_pin, GPIO.HIGH)
         except Exception as e:
             raise GPIOControllerError(f"Failed to initialize GPIO pins: {e}")
 
     def enable_HV_power(self, enable: bool):
-        GPIO.output(self.HV_power_enable_pin, GPIO.HIGH if enable else GPIO.LOW)
+        GPIO.output(self.HV_power_enable_pin, GPIO.LOW if enable else GPIO.HIGH)
     
     def enable_HV(self, enable: bool):
-        GPIO.output(self.HV_enable_pin, GPIO.HIGH if enable else GPIO.LOW)
+        GPIO.output(self.HV_enable_pin, GPIO.LOW if enable else GPIO.HIGH)
     
     def enable_LED_power(self, enable: bool):
-        GPIO.output(self.LED_power_enable_pin, GPIO.HIGH if enable else GPIO.LOW)
+        GPIO.output(self.LED_power_enable_pin, GPIO.LOW if enable else GPIO.HIGH)
     
     def enable_positioning_power(self, enable: bool):
-        GPIO.output(self.positioning_power_enable_pin, GPIO.HIGH if enable else GPIO.LOW)
+        GPIO.output(self.positioning_power_enable_pin, GPIO.LOW if enable else GPIO.HIGH)
     
     def enable_rotation_power(self, enable: bool):
-        GPIO.output(self.rotation_power_enable_pin, GPIO.HIGH if enable else GPIO.LOW)
+        GPIO.output(self.rotation_power_enable_pin, GPIO.LOW if enable else GPIO.HIGH)
 
     def cleanup(self):
         GPIO.cleanup()
