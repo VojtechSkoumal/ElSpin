@@ -26,4 +26,4 @@ class LEDControlBhv:
     def update_labels(self):
         self.ui.LED_power_pushButton.setText(f'Power LEDs {"OFF" if self.led_on else "ON"}')
         self.ui.LED_state_label.setText(f'{"ON" if self.led_on else "OFF"}')
-        self.ui.LED_state_label.setStyleSheet(f"color: {'green' if self.led_on else 'black'};")
+        self.ui.LED_state_label.setStyleSheet(f"color: {'green' if self.led_on else 'black'}; font-weight: bold;")
