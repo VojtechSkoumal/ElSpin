@@ -22,7 +22,7 @@ class HVControlBhv:
         self.ui.HV_power_checkBox.stateChanged.connect(self.toggle_HV_power)
         self.ui.HV_connect_pushButton.clicked.connect(self.connect)
 
-        self.ui.HV_enable_checkBox.stateChanged.connect(self.toggle_HV_enable)
+        self.ui.HV_enable_pushButton.clicked.connect(self.toggle_HV_enable)
 
     
     def toggle_HV_power(self):
