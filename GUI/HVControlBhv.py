@@ -2,6 +2,8 @@ from GUI.mainwindow import Ui_MainWindow
 from GUI.HVControl import HVController
 from GUI.GPIOControl import GPIOController
 
+from GUI.ConfigParser import get_config_parser
+
 
 class HVControlBhv:
     def __init__(self, ui: Ui_MainWindow, hv_controller: HVController, gpio_controller: GPIOController):
@@ -17,4 +19,40 @@ class HVControlBhv:
         pass
 
     def connections(self):
-        pass
+        self.ui.HV_power_checkBox.stateChanged.connect(self.toggle_HV_power)
+        self.ui.HV_connect_pushButton.clicked.connect(self.connect)
+
+        self.ui.HV_enable_checkBox.stateChanged.connect(self.toggle_HV_enable)
+
+    
+    def toggle_HV_power(self):
+        hv_power_on = self.ui.HV_power_checkBox.isChecked()
+        self.gpio_controller.enable_HV_power(hv_power_on)
+        self.update_connect_button()
+    
+    def update_connect_button(self):
+        hv_power_on = self.ui.HV_power_checkBox.isChecked()
+        self.ui.HV_connect_pushButton.setEnabled(hv_power_on)
+    
+    def connect(self):
+        try:
+            self.hv_controller.connect()
+            self.ui.HV_connect_pushButton.setText("Disconnect")
+            self.ui.HV_connect_pushButton.clicked.disconnect()
+            self.ui.HV_connect_pushButton.clicked.connect(self.disconnect)
+            self.ui.HV_connected_groupBox.setEnabled(True)
+        except Exception as e:
+            print(f"Failed to connect to HV power supply: {e}")
+        
+    def disconnect(self):
+        self.hv_controller.close()
+        self.ui.HV_connect_pushButton.setText("Connect")
+        self.ui.HV_connect_pushButton.clicked.disconnect()
+        self.ui.HV_connect_pushButton.clicked.connect(self.connect)
+        self.ui.HV_connected_groupBox.setEnabled(False)
+
+    def toggle_HV_enable(self):
+        hv_enable_on = self.ui.HV_enable_pushButton.isChecked()
+        self.gpio_controller.enable_HV(hv_enable_on)
+        self.ui.HV_enable_pushButton.setText(f'{"Disable" if hv_enable_on else "Enable"}')
+        self.ui.HV_state_label.setText(f'{"ON" if hv_enable_on else "OFF"}')

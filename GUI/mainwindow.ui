@@ -134,7 +134,57 @@
                   <property name="spacing">
                    <number>6</number>
                   </property>
-                  <item row="0" column="0" colspan="3">
+                  <item row="1" column="1">
+                   <widget class="QLabel" name="HV_target_voltage_label">
+                    <property name="text">
+                     <string>Target Voltage [V]:</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="2">
+                   <widget class="QSpinBox" name="spinBox">
+                    <property name="maximum">
+                     <number>30000</number>
+                    </property>
+                    <property name="singleStep">
+                     <number>1000</number>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="3">
+                   <widget class="QPushButton" name="HV_set_target_voltage_pushButton">
+                    <property name="text">
+                     <string>Set</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="2" column="2" colspan="2">
+                   <widget class="QPushButton" name="HV_enable_pushButton">
+                    <property name="text">
+                     <string>Enable</string>
+                    </property>
+                    <property name="checkable">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="2" column="1">
+                   <widget class="QLabel" name="HV_state_label">
+                    <property name="styleSheet">
+                     <string notr="true">font: 900 9pt &quot;Segoe UI&quot;;</string>
+                    </property>
+                    <property name="text">
+                     <string>OFF</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1" colspan="3">
                    <widget class="QLabel" name="HV_live_voltage_label">
                     <property name="styleSheet">
                      <string notr="true">font: 24pt &quot;Segoe UI&quot;;</string>
@@ -147,40 +197,6 @@
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignmentFlag::AlignCenter</set>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="0">
-                   <widget class="QLabel" name="HV_target_voltage_label">
-                    <property name="text">
-                     <string>Target Voltage [V]:</string>
-                    </property>
-                    <property name="alignment">
-                     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="1">
-                   <widget class="QSpinBox" name="spinBox">
-                    <property name="maximum">
-                     <number>30000</number>
-                    </property>
-                    <property name="singleStep">
-                     <number>1000</number>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="2">
-                   <widget class="QPushButton" name="HV_set_target_voltage_pushButton">
-                    <property name="text">
-                     <string>Set</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="2" column="0" colspan="3">
-                   <widget class="QPushButton" name="HV_enable_pushButton">
-                    <property name="text">
-                     <string>Enable</string>
                     </property>
                    </widget>
                   </item>

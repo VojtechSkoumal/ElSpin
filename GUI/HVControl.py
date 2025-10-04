@@ -22,15 +22,21 @@ class HVController:
         self.devtype = devtype
         self.timeout = timeout
 
+        self.ser = None
+
         if self.port is None:
             self.port = self._detect_port()
             print(f"Auto-detected port: {self.port}")
 
-        self.ser = serial.Serial(port=self.port, baudrate=self.baudrate, bytesize=serial.EIGHTBITS,
+    def connect(self):
+        try: 
+            self.ser = serial.Serial(port=self.port, baudrate=self.baudrate, bytesize=serial.EIGHTBITS,
                                  parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE,
                                  timeout=self.timeout)
-        # Allow some settling time
-        time.sleep(0.1)
+            # Allow some settling time
+            time.sleep(0.1)
+        except serial.SerialException as e:
+            raise HVControllerError(f"Failed to open serial port {self.port}: {e}")
 
     def close(self):
         if self.ser.is_open:
@@ -43,7 +49,7 @@ class HVController:
         import serial.tools.list_ports
         ports = serial.tools.list_ports.comports()
         for port in ports:
-            if "CH340" in port.description:
+            if "USB2.0-Ser!" in port.description:
                 return port.device
         raise HVControllerError("Could not auto-detect serial port")
 
