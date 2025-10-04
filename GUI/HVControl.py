@@ -1,5 +1,6 @@
 import serial
 import time
+import threading
 
 
 class HVControllerError(Exception):
@@ -28,6 +29,12 @@ class HVController:
             self.port = self._detect_port()
             print(f"Auto-detected port: {self.port}")
 
+        self.voltage_monitor = None
+        self.voltage_monitor_thread = None
+        self.on_voltage_update = None  # Callback function for voltage updates
+        self.voltage_monitor_stop_event = threading.Event()
+        self.communication_lock = threading.Lock()
+
     def connect(self):
         try: 
             self.ser = serial.Serial(port=self.port, baudrate=self.baudrate, bytesize=serial.EIGHTBITS,
@@ -39,10 +46,13 @@ class HVController:
             raise HVControllerError(f"Failed to open serial port {self.port}: {e}")
 
     def close(self):
-        if self.ser.is_open:
+        # Stop voltage monitor thread if running
+        self.stop_voltage_monitor()
+        
+        if self.ser and self.ser.is_open:
             self.ser.close()
             time.sleep(0.1)
-        if self.ser.is_open:
+        if self.ser and self.ser.is_open:
             raise HVControllerError("Failed to close serial port")
 
     def _detect_port(self):
@@ -84,59 +94,67 @@ class HVController:
         Send command, read response. Returns the ASCII response (without STX and LF).
         Raises error on timeout or invalid response/CSUM.
         """
+        if self.ser is None or not self.ser.is_open:
+            raise HVControllerError("Serial port not connected")
+        
         raw = self._build_command(cmd, operator, data)
-        # clear input buffer before sending
-        self.ser.reset_input_buffer()
-        # send
-        self.ser.write(raw)
-        # Depending on the command, device responds. For broadcast (ADDR="00") usually no reply except ID?
-        if not expect_response:
-            return ""
-        # read until LF
-        resp = self.ser.read_until(b'\n')
-        if not resp:
-            raise HVControllerError("No response from device")
-        # resp is bytes, decode
-        try:
-            resp_ascii = resp.decode('ascii')
-        except UnicodeDecodeError:
-            raise HVControllerError(f"Non‐ASCII response: {resp!r}")
+        
+        with self.communication_lock:
+            # clear input buffer before sending
+            self.ser.reset_input_buffer()
+            # send
+            self.ser.write(raw)
+            # Depending on the command, device responds. For broadcast (ADDR="00") usually no reply except ID?
+            if not expect_response:
+                return ""
+            # read until LF
+            resp = self.ser.read_until(b'\n')
+            
+            # Process response while still holding the lock to prevent race conditions
+            if not resp:
+                raise HVControllerError("No response from device")
+            
+            # resp is bytes, decode
+            try:
+                resp_ascii = resp.decode('ascii')
+            except UnicodeDecodeError:
+                raise HVControllerError(f"Non‐ASCII response: {resp!r}")
 
-        # Response should begin with STX
-        if not resp_ascii.startswith(chr(0x02)):
-            raise HVControllerError(f"Invalid start of response: {resp_ascii!r}")
+            # Response should begin with STX
+            if not resp_ascii.startswith(chr(0x02)):
+                raise HVControllerError(f"Invalid start of response: {resp_ascii!r}")
 
-        # Strip STX and LF
-        body = resp_ascii[1:].rstrip('\n').rstrip('\r')
-        # Now you have something like ADDR DEVTYPE CMD = DATA CSUM etc.
-        # Optionally verify checksum of response
-        # We can parse out the pieces
-        # Format: <ADDR><DEVTYPE><CMD><OPERATOR><DATA><CSUM>
-        # We'll extract ADDR, DEVTYPE, CMD (2 chars each), operator (1 char), then data (variable), then csum (last 2 chars)
-        if len(body) < (2 + 2 + 2 + 1 + 2):  # minimal length
-            raise HVControllerError(f"Response too short: {body!r}")
+            # Strip STX and LF
+            body = resp_ascii[1:].rstrip('\n').rstrip('\r')
+            # Now you have something like ADDR DEVTYPE CMD = DATA CSUM etc.
+            # Optionally verify checksum of response
+            # We can parse out the pieces
+            # Format: <ADDR><DEVTYPE><CMD><OPERATOR><DATA><CSUM>
+            # We'll extract ADDR, DEVTYPE, CMD (2 chars each), operator (1 char), then data (variable), then csum (last 2 chars)
+            if len(body) < (2 + 2 + 2 + 1 + 2):  # minimal length
+                raise HVControllerError(f"Response too short: {body!r}")
 
-        addr_r = body[0:2]
-        devtype_r = body[2:4]
-        cmd_r = body[4:6]
-        operator_r = body[6:7]
-        # everything up to last two chars minus data
-        # data is from position 7 up to len(body)-2
-        data_r = body[7:-2]
-        csum_r = body[-2:]
+            addr_r = body[0:2]
+            devtype_r = body[2:4]
+            cmd_r = body[4:6]
+            operator_r = body[6:7]
+            # everything up to last two chars minus data
+            # data is from position 7 up to len(body)-2
+            data_r = body[7:-2]
+            csum_r = body[-2:]
 
-        # Optionally verify addr/devtype match
-        if addr_r != self.addr or devtype_r != self.devtype or cmd_r != cmd:
-            # maybe the device is different? We can warn or error
-            raise HVControllerError(f"Unexpected response header: addr/devtype/cmd mismatch: got {addr_r},{devtype_r},{cmd_r}")
+            # Optionally verify addr/devtype match
+            if addr_r != self.addr or devtype_r != self.devtype or cmd_r != cmd:
+                # maybe the device is different? We can warn or error
+                raise HVControllerError(f"Unexpected response header: addr/devtype/cmd mismatch: got {addr_r},{devtype_r},{cmd_r}")
 
-        # Compute expected checksum for the response
-        expected = self._checksum(addr_r, devtype_r, cmd_r, operator_r, data_r)
-        if expected.upper() != csum_r.upper():
-            raise HVControllerError(f"Checksum mismatch: expected {expected}, got {csum_r}")
+            # Compute expected checksum for the response
+            expected = self._checksum(addr_r, devtype_r, cmd_r, operator_r, data_r)
+            if expected.upper() != csum_r.upper():
+                raise HVControllerError(f"Checksum mismatch: expected {expected}, got {csum_r}")
 
-        # Data operator is '=' for responses with data, '*' for invalid command, etc.
-        return operator_r + data_r  # e.g. "=02500.0"
+            # Data operator is '=' for responses with data, '*' for invalid command, etc.
+            return operator_r + data_r  # e.g. "=02500.0"
 
     #
     # Public commands
@@ -249,17 +267,48 @@ class HVController:
         except ValueError:
             raise HVControllerError(f"Cannot parse status register: {val_str}")
 
-    def get_voltage_monitor(self) -> float:
-        resp = self._send_command(cmd="M0", operator="?", data="")
-        if not resp.startswith('='):
-            raise HVControllerError(f"Unexpected response {resp}")
-        return float(resp[1:])
+    def start_voltage_monitor(self) -> None:
+        """
+        Start a background thread to monitor voltage every second.
+        The latest voltage is stored in self.voltage_monitor.
+        """
+        if self.ser is None or not self.ser.is_open:
+            raise HVControllerError("Serial port not connected; cannot start voltage monitor")
+        
+        if self.voltage_monitor_thread and self.voltage_monitor_thread.is_alive():
+            print("Voltage monitor already running")
+            return
 
-    def get_current_monitor(self) -> float:
-        resp = self._send_command(cmd="M1", operator="?", data="")
-        if not resp.startswith('='):
-            raise HVControllerError(f"Unexpected response {resp}")
-        return float(resp[1:])
+        # Reset the stop event
+        self.voltage_monitor_stop_event.clear()
+
+        def monitor():
+            while not self.voltage_monitor_stop_event.is_set():
+                try:
+                    voltage = self.get_voltage()
+                    self.voltage_monitor = voltage
+                    if self.on_voltage_update:
+                        self.on_voltage_update(voltage)
+                except HVControllerError as e:
+                    print(f"Error reading voltage: {e}")
+                    self.voltage_monitor = None
+                
+                # Use wait instead of sleep to allow for immediate shutdown
+                if self.voltage_monitor_stop_event.wait(timeout=1.0):
+                    break
+
+        self.voltage_monitor_thread = threading.Thread(target=monitor, daemon=True)
+        self.voltage_monitor_thread.start()
+
+    def stop_voltage_monitor(self) -> None:
+        """
+        Stop the voltage monitoring thread gracefully.
+        """
+        if self.voltage_monitor_thread and self.voltage_monitor_thread.is_alive():
+            self.voltage_monitor_stop_event.set()
+            self.voltage_monitor_thread.join(timeout=2.0)  # Wait up to 2 seconds
+            if self.voltage_monitor_thread.is_alive():
+                print("Warning: Voltage monitor thread did not stop gracefully")
 
 
 if __name__ == "__main__":

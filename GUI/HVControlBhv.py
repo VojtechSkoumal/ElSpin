@@ -11,7 +11,6 @@ class HVControlBhv:
         self.hv_controller = hv_controller
         self.gpio_controller = gpio_controller
 
-
         self.init()
         self.connections()
     
@@ -23,7 +22,6 @@ class HVControlBhv:
         self.ui.HV_connect_pushButton.clicked.connect(self.connect)
 
         self.ui.HV_enable_pushButton.clicked.connect(self.toggle_HV_enable)
-
     
     def toggle_HV_power(self):
         hv_power_on = self.ui.HV_power_checkBox.isChecked()
@@ -41,6 +39,8 @@ class HVControlBhv:
             self.ui.HV_connect_pushButton.clicked.disconnect()
             self.ui.HV_connect_pushButton.clicked.connect(self.disconnect)
             self.ui.HV_connected_groupBox.setEnabled(True)
+            self.hv_controller.on_voltage_update = self.on_voltage_update
+            self.hv_controller.start_voltage_monitor()
         except Exception as e:
             print(f"Failed to connect to HV power supply: {e}")
         
@@ -56,3 +56,9 @@ class HVControlBhv:
         self.gpio_controller.enable_HV(hv_enable_on)
         self.ui.HV_enable_pushButton.setText(f'{"Disable" if hv_enable_on else "Enable"}')
         self.ui.HV_state_label.setText(f'{"ON" if hv_enable_on else "OFF"}')
+    
+    def on_voltage_update(self, voltage):
+        if voltage is not None:
+            self.ui.HV_live_voltage_label.setText(f"Voltage: {int(voltage):,} V")
+        else:
+            self.ui.HV_live_voltage_label.setText("Voltage: NaN V")
