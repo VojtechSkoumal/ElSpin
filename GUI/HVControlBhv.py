@@ -42,12 +42,16 @@ class HVControlBhv:
             self.ui.HV_connect_pushButton.clicked.disconnect()
             self.ui.HV_connect_pushButton.clicked.connect(self.disconnect)
             self.ui.HV_connected_groupBox.setEnabled(True)
+            self.hv_controller.set_enable_state(False)
+            self.hv_controller.set_voltage(0.0)
             self.hv_controller.on_voltage_update = self.on_voltage_update
             self.hv_controller.start_voltage_monitor()
         except Exception as e:
             print(f"Failed to connect to HV power supply: {e}")
         
     def disconnect(self):
+        self.hv_controller.set_voltage(0.0)
+        self.hv_controller.set_enable_state(False)
         self.hv_controller.close()
         self.ui.HV_connect_pushButton.setText("Connect")
         self.ui.HV_connect_pushButton.clicked.disconnect()

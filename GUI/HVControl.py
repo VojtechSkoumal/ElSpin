@@ -162,7 +162,7 @@ class HVController:
 
     def get_voltage(self) -> float:
         """
-        Read present value of output voltage (V1?)
+        Read present value of target output voltage (V1?)
         Returns voltage in volts (float)
         """
         resp = self._send_command(cmd="V1", operator="?", data="")
@@ -177,7 +177,7 @@ class HVController:
 
     def set_voltage(self, volts: float) -> None:
         """
-        Set desired HV output voltage demand (V1=)
+        Set target HV output voltage (V1=)
         :param volts: in volts
         """
         # According to examples, format is zero padded to appropriate width. The example: "02500.0" for 2.5kV
@@ -285,7 +285,7 @@ class HVController:
         def monitor():
             while not self.voltage_monitor_stop_event.is_set():
                 try:
-                    voltage = self.get_voltage()
+                    voltage = self.get_output_voltage()
                     self.voltage_monitor = voltage
                     if self.on_voltage_update:
                         self.on_voltage_update(voltage)
@@ -309,6 +309,24 @@ class HVController:
             self.voltage_monitor_thread.join(timeout=2.0)  # Wait up to 2 seconds
             if self.voltage_monitor_thread.is_alive():
                 print("Warning: Voltage monitor thread did not stop gracefully")
+    
+    def get_output_voltage(self) -> float:
+        """
+        Read the actual output voltage (M0?)
+        """
+        resp = self._send_command(cmd="M0", operator="?", data="")
+        if not resp.startswith('='):
+            raise HVControllerError(f"Unexpected response {resp}")
+        return float(resp[1:])
+
+    def get_output_current(self) -> float:
+        """
+        Read the actual output current (M1?)
+        """
+        resp = self._send_command(cmd="M1", operator="?", data="")
+        if not resp.startswith('='):
+            raise HVControllerError(f"Unexpected response {resp}")
+        return float(resp[1:])
 
 
 if __name__ == "__main__":
