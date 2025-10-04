@@ -330,7 +330,7 @@ class HVController:
 
 
 if __name__ == "__main__":
-    # Example usage``
+    # Example usage
     mpd = HVController()
     try:
         print("Status:", mpd.get_status())
