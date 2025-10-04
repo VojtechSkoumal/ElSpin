@@ -51,7 +51,7 @@ class ElSpinApplication:
 
     def init(self):
         self.gpio_controller = GPIOController()
-        self.hv_controller = HVController(port=get_config_parser().get("HV", "port"))
+        self.hv_controller = HVController(port=get_config_parser().get("HVControl", "COMPort"))
         self.positioning_controller = PositioningController(self.ui)
 
         self.led_control_bhv = LEDControlBhv(self.ui, self.gpio_controller)
