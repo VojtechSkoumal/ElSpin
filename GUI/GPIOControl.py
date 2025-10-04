@@ -47,6 +47,15 @@ class GPIOController:
     def enable_rotation_power(self, enable: bool):
         GPIO.output(self.rotation_power_enable_pin, GPIO.LOW if enable else GPIO.HIGH)
 
+    def finalize(self):
+        GPIO.output(self.HV_power_enable_pin, GPIO.HIGH)
+        GPIO.output(self.HV_enable_pin, GPIO.HIGH)
+        GPIO.output(self.LED_power_enable_pin, GPIO.HIGH)
+        GPIO.output(self.positioning_power_enable_pin, GPIO.HIGH)
+        GPIO.output(self.rotation_power_enable_pin, GPIO.HIGH)
+        time.sleep(0.1)  # Ensure the pins are set before cleanup
+        GPIO.cleanup()
+
     def cleanup(self):
         GPIO.cleanup()
 

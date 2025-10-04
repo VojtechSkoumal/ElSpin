@@ -21,6 +21,9 @@ class HVControlBhv:
         self.ui.HV_power_checkBox.stateChanged.connect(self.toggle_HV_power)
         self.ui.HV_connect_pushButton.clicked.connect(self.connect)
 
+        self.ui.HV_set_target_voltage_pushButton.clicked.connect(
+            lambda: self.hv_controller.set_voltage(self.ui.HV_target_voltage_spinBox.value())
+        )
         self.ui.HV_enable_pushButton.clicked.connect(self.toggle_HV_enable)
     
     def toggle_HV_power(self):
