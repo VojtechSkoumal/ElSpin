@@ -38,6 +38,8 @@ class HVControlBhv:
     def connect(self):
         try:
             self.hv_controller.connect()
+            self.hv_controller.close()  # Close immediately to reset any previous state
+            self.hv_controller.connect()
             self.ui.HV_connect_pushButton.setText("Disconnect")
             self.ui.HV_connect_pushButton.clicked.disconnect()
             self.ui.HV_connect_pushButton.clicked.connect(self.disconnect)
