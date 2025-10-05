@@ -6,6 +6,7 @@ import queue
 import math
 import numpy as np
 
+from GUI.ConfigParser import get_config_parser
 from GUI.GRBLSettings import OPERATING_SETTINGS
 
 
@@ -13,7 +14,7 @@ class PositioningController:
     def __init__(self):
         self.operating_settings = OPERATING_SETTINGS
 
-        self.grbl_streamer = GRBLStreamer()
+        self.grbl_streamer = GRBLStreamer(port=get_config_parser().get('Positioning', 'COMPort'))
         self.grbl_streamer.connect()
         self.grbl_streamer.loop_method = self.dummy_loop  # Example loop method
         self.set_settings(self.operating_settings)

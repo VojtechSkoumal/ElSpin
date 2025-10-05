@@ -5,7 +5,7 @@ from GUI.GPIOControl import GPIOController
 from GUI.ConfigParser import get_config_parser
 
 
-class HVControlBhv:
+class PositioningControlBhv:
     def __init__(self, ui: Ui_MainWindow, positioning_controller: PositioningController, gpio_controller: GPIOController):
         self.ui = ui
         self.positioning_controller = positioning_controller

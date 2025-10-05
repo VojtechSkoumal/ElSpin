@@ -17,6 +17,7 @@ from GUI.PositioningControl import PositioningController
 
 from GUI.LEDControlBhv import LEDControlBhv
 from GUI.HVControlBhv import HVControlBhv
+from GUI.PositioningControlBhv import PositioningControlBhv
 
 
 class ElSpinApplication:
@@ -36,6 +37,7 @@ class ElSpinApplication:
 
         self.led_control_bhv: LEDControlBhv = None
         self.hv_control_bhv: HVControlBhv = None
+        self.positioning_control_bhv: PositioningControlBhv = None
 
         self.init()
         self.connections()
@@ -56,12 +58,13 @@ class ElSpinApplication:
 
         self.led_control_bhv = LEDControlBhv(self.ui, self.gpio_controller)
         self.hv_control_bhv = HVControlBhv(self.ui, self.hv_controller, self.gpio_controller)
+        self.positioning_control_bhv = PositioningControlBhv(self.ui, self.positioning_controller, self.gpio_controller)
 
     def connections(self):
-        pass
+        self.ui.log_box_groupBox.toggled.connect(self.hide_log_window)
 
-    def hide_log_window(self, state):
-        self.ui.logs_frame.setVisible(state)
+    def hide_log_window(self):
+        self.ui.log_box_textBrowser.setVisible(self.ui.log_box_groupBox.isChecked())
 
     def show(self):
         self.MainWindow.showMaximized()
