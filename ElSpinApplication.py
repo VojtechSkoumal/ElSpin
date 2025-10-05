@@ -61,10 +61,7 @@ class ElSpinApplication:
         self.positioning_control_bhv = PositioningControlBhv(self.ui, self.positioning_controller, self.gpio_controller)
 
     def connections(self):
-        self.ui.log_box_groupBox.toggled.connect(self.hide_log_window)
-
-    def hide_log_window(self):
-        self.ui.log_box_textBrowser.setVisible(self.ui.log_box_groupBox.isChecked())
+        pass
 
     def show(self):
         self.MainWindow.showMaximized()
