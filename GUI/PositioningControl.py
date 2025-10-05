@@ -270,7 +270,7 @@ class GRBLStreamer:
     def find_arduino_port(self):
         ports = serial.tools.list_ports.comports()
         for port in ports:
-            if "Arduino" in port.description or "CH340" in port.description or "USB Serial" in port.description:
+            if "USB Serial" in port.description:
                 print(f"Arduino found on port: {port.device}")
                 return port.device
         print("Arduino not found")
