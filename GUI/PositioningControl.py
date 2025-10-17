@@ -32,7 +32,7 @@ class PositioningController:
         self.set_settings(self.operating_settings)
 
         self.default_simple_move_feedrate = get_config_parser().getfloat('Positioning', 'DefaultSimpleMoveFeedrate', fallback=1000.0)
-        self.stage_center = get_config_parser().getint('Positioning', 'StageCenter', fallback=250)
+        self.stage_center = get_config_parser().getfloat('Positioning', 'StageCenter')
     
     def home(self):
         print("Starting homing cycle...")
