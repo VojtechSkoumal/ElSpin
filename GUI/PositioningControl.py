@@ -42,8 +42,8 @@ class PositioningController:
             time.sleep(0.1)
             response = self.grbl_streamer.ser.read_all().decode().strip()
         # Move pumps away from endstops
-        self.simple_move('X', 10, 1000)
-        self.simple_move('Y', 10, 1000)
+        self.simple_move('X', 5, 1000)
+        self.simple_move('Y', 5, 1000)
         print("Homing cycle completed.")
         return response
     
@@ -54,6 +54,10 @@ class PositioningController:
             feedrate = self.default_simple_move_feedrate
         print(f'Status before move: {self.grbl_streamer.get_status()}')
         self.set_relative_positioning()
+        if axis != 'Z':
+            # For pumps (X and Y), steps per mm is set such that 1 mm/h is in fact 1 ml/h
+            # For simple move the distance must be multiplied to mach the desired distance in reality
+            distance = distance * 3200 / 427  # Using operating settings steps/mm ratio
         move_cmd = f"G1 {axis}{distance:.3f} F{feedrate:.3f}"
         print(f"Sending move command: {move_cmd}")
         response = self.grbl_streamer.send_command(move_cmd)
@@ -65,6 +69,7 @@ class PositioningController:
             raise ValueError("Axis must be 'X', 'Y', or 'Z'")
         if feedrate is None:
             feedrate = self.default_simple_move_feedrate
+        print(f'Status before move: {self.grbl_streamer.get_status()}')
         self.set_absolute_positioning()
         move_cmd = f"G1 {axis}{position:.3f} F{feedrate:.3f}"
         print(f"Sending move command: {move_cmd}")
