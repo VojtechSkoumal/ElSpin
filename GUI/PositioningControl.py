@@ -6,6 +6,7 @@ import time
 import queue
 import math
 import numpy as np
+import re
 
 from GUI.ConfigParser import get_config_parser
 from GUI.GRBLSettings import OPERATING_SETTINGS
@@ -86,15 +87,11 @@ class PositioningController:
     
     def get_absolute_positions(self):
         status = self.grbl_streamer.get_status()
-        if '<' in status and '>' in status:
-            pos_part = status.split('|')[1]  # Get the part with positions
-            if pos_part.startswith('MPos:'):
-                pos_values = pos_part[5:].split(',')
-                if len(pos_values) >= 3:
-                    x_pos = float(pos_values[0])
-                    y_pos = float(pos_values[1])
-                    z_pos = float(pos_values[2])
-                    return Position(x_pos, y_pos, z_pos)
+        # response pattern: <Idle,MPos:0.000,0.000,0.000,WPos:0.000,0.000,0.000,Lim:000>
+        match = re.search(r"MPos:([\d\.\-]+),([\d\.\-]+),([\d\.\-]+)", status)
+        if match:
+            x_pos, y_pos, z_pos = map(float, match.groups())
+            return Position(x_pos, y_pos, z_pos)
         raise ValueError("Could not parse position from GRBL status: " + status)
 
     def set_relative_positioning(self):
