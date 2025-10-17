@@ -301,14 +301,14 @@
                      <item row="1" column="3">
                       <widget class="QPushButton" name="positioning_pump_1_move_forward_10_pushButton">
                        <property name="text">
-                        <string>+10</string>
+                        <string>+10 &gt;&gt;</string>
                        </property>
                       </widget>
                      </item>
                      <item row="1" column="1">
                       <widget class="QPushButton" name="positioning_pump_1_move_back_1_pushButton">
                        <property name="text">
-                        <string>-1</string>
+                        <string>&lt;&lt; -1</string>
                        </property>
                       </widget>
                      </item>
@@ -325,7 +325,7 @@
                      <item row="1" column="0">
                       <widget class="QPushButton" name="positioning_pump_1_move_back_10_pushButton">
                        <property name="text">
-                        <string>-10</string>
+                        <string>&lt;&lt; -10</string>
                        </property>
                       </widget>
                      </item>
@@ -339,7 +339,7 @@
                      <item row="1" column="2">
                       <widget class="QPushButton" name="positioning_pump_1_move_forward_1_pushButton">
                        <property name="text">
-                        <string>+1</string>
+                        <string>+1 &gt;&gt;</string>
                        </property>
                       </widget>
                      </item>
@@ -355,21 +355,21 @@
                      <item row="1" column="3">
                       <widget class="QPushButton" name="positioning_pump_2_move_forward_10_pushButton">
                        <property name="text">
-                        <string>+10</string>
+                        <string>+10 &gt;&gt;</string>
                        </property>
                       </widget>
                      </item>
                      <item row="1" column="0">
                       <widget class="QPushButton" name="positioning_pump_2_move_back_10_pushButton">
                        <property name="text">
-                        <string>-10</string>
+                        <string>&lt;&lt; -10</string>
                        </property>
                       </widget>
                      </item>
                      <item row="1" column="2">
                       <widget class="QPushButton" name="positioning_pump_2_move_forward_1_pushButton">
                        <property name="text">
-                        <string>+1</string>
+                        <string>+1 &gt;&gt;</string>
                        </property>
                       </widget>
                      </item>
@@ -393,7 +393,7 @@
                      <item row="1" column="1">
                       <widget class="QPushButton" name="positioning_pump_2_move_back_1_pushButton">
                        <property name="text">
-                        <string>-1</string>
+                        <string>&lt;&lt; -1</string>
                        </property>
                       </widget>
                      </item>
@@ -430,7 +430,7 @@
                      <item row="2" column="1">
                       <widget class="QPushButton" name="positioning_stage_move_back_10_pushButton">
                        <property name="text">
-                        <string>-10</string>
+                        <string>&lt;&lt; -10</string>
                        </property>
                       </widget>
                      </item>
@@ -447,21 +447,21 @@
                      <item row="2" column="3">
                       <widget class="QPushButton" name="positioning_stage_move_forward_1_pushButton">
                        <property name="text">
-                        <string>+1</string>
+                        <string>+1 &gt;&gt;</string>
                        </property>
                       </widget>
                      </item>
                      <item row="2" column="4">
                       <widget class="QPushButton" name="positioning_stage_move_forward_10_pushButton">
                        <property name="text">
-                        <string>+10</string>
+                        <string>+10 &gt;&gt;</string>
                        </property>
                       </widget>
                      </item>
                      <item row="2" column="2">
                       <widget class="QPushButton" name="positioning_stage_move_back_1_pushButton">
                        <property name="text">
-                        <string>-1</string>
+                        <string>&lt;&lt; -1</string>
                        </property>
                       </widget>
                      </item>

@@ -29,6 +29,7 @@ class ElSpinApplication:
         self.ui: Ui_MainWindow = Ui_MainWindow()
         self.ui.setupUi(self.MainWindow)
         self.MainWindow.setWindowTitle("ElSpin Control")
+        self.ui.log_box_groupBox.setVisible(False)
         self.set_icons()
 
         self.gpio_controller: GPIOController = None
