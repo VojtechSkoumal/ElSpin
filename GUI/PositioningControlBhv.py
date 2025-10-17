@@ -39,7 +39,7 @@ class PositioningControlBhv:
         self.ui.positioning_stage_move_forward_1_pushButton.clicked.connect(lambda: self.positioning_controller.simple_move("Z", 1))
         self.ui.positioning_stage_move_forward_10_pushButton.clicked.connect(lambda: self.positioning_controller.simple_move("Z", 10))
         self.ui.positioning_stage_move_to_center_pushButton.clicked.connect(self.positioning_controller.center_stage)
-        self.ui.positioning_stage_calibrate_center_pushButton.clicked.connect(self.positioning_controller.calibrate_center)
+        self.ui.positioning_stage_calibrate_center_pushButton.clicked.connect(self.calibrate_center)
 
     def toggle_positioning_power(self):
         positioning_power_on = self.ui.positioning_power_checkBox.isChecked()
@@ -51,3 +51,7 @@ class PositioningControlBhv:
     def home(self):
         self.positioning_controller.home()
         self.ui.positioning_homing_done_widget.setEnabled(True)
+    
+    def calibrate_center(self):
+        self.positioning_controller.calibrate_center()
+        self.ui.positioning_stage_amplitude_spinBox.setMaximum(abs(self.positioning_controller.stage_center))
