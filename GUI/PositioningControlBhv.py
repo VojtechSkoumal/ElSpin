@@ -56,7 +56,7 @@ class PositioningControlBhv:
         self.positioning_controller.calibrate_center()
         self.ui.positioning_stage_amplitude_spinBox.setMaximum(abs(self.positioning_controller.stage_center))
         try:
-            edit_config_file("Positioning", "StageCenter", str(abs(self.positioning_controller.stage_center)))
+            edit_config_file("Positioning", "StageCenter", str(self.positioning_controller.stage_center))
         except FileNotFoundError:
             print(f'Could not save StageCenter to config file. Local config file does not exist.')
     
