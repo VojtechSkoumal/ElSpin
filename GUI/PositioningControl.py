@@ -17,6 +17,9 @@ class Position:
     y: float
     z: float
 
+    def __str__(self):
+        return f"X: {self.x:.3f}, Y: {self.y:.3f}, Z: {self.z:.3f}"
+
 
 class PositioningController:
     def __init__(self):
