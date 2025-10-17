@@ -64,12 +64,16 @@ class PositioningController:
             raise ValueError("Axis must be 'X', 'Y', or 'Z'")
         if feedrate is None:
             feedrate = self.default_simple_move_feedrate
-        self.set_absolute_positioning()
-        move_cmd = f"G1 {axis}{position:.3f} F{feedrate:.3f}"
-        print(f"Sending move command: {move_cmd}")
-        response = self.grbl_streamer.send_command(move_cmd)
-        print("Move command response:", response)
-        self.set_relative_positioning()
+        # self.set_absolute_positioning()
+        # move_cmd = f"G1 {axis}{position:.3f} F{feedrate:.3f}"
+        # print(f"Sending move command: {move_cmd}")
+        # response = self.grbl_streamer.send_command(move_cmd)
+        # print("Move command response:", response)
+        # self.set_relative_positioning()
+        abs_pos = self.get_absolute_positions()
+        abs_pos = {'X': abs_pos.x, 'Y': abs_pos.y, 'Z': abs_pos.z}
+        distance = position - abs_pos[axis]
+        response = self.simple_move(axis, distance, feedrate)
         return response
 
     def center_stage(self):
