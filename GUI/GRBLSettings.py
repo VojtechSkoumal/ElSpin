@@ -2,7 +2,7 @@ OPERATING_SETTINGS = {
     '0':10,  # (step pulse, usec)
     '1':25,  # (step idle delay, msec)
     '2':0,  # (step port invert mask:00000000)
-    '3':7,  # dir port invert mask (7 = 0b111, all inverted)
+    '3':3,  # dir port invert mask (3 = 0b011 (ZYX), Y and X inverted)
     '4':0,  # (step enable invert, bool)
     '5':0,  # (limit pins invert, bool)
     '6':0,  # (probe pin invert, bool)
@@ -15,7 +15,7 @@ OPERATING_SETTINGS = {
     '20':0,  # Soft limits enabled
     '21':1,  # Hard limits enabled
     '22':1,  # Homing cycle enabled
-    '23':7,  # Homing dir invert mask (7 = 0b111, all inverted)
+    '23':3,  # Homing dir invert mask (3 = 0b011 (ZYX), Y and X inverted)
     '24':100,  # Homing feed rate
     '25':400,  # Homing seek rate
     '26':250,  # (homing debounce, msec)
