@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import serial
 import serial.tools.list_ports
 import threading
@@ -10,6 +11,13 @@ from GUI.ConfigParser import get_config_parser
 from GUI.GRBLSettings import OPERATING_SETTINGS
 
 
+@dataclass
+class Position:
+    x: float
+    y: float
+    z: float
+
+
 class PositioningController:
     def __init__(self):
         self.operating_settings = OPERATING_SETTINGS
@@ -18,6 +26,9 @@ class PositioningController:
         self.grbl_streamer.connect()
         self.grbl_streamer.loop_method = self.dummy_loop  # Example loop method
         self.set_settings(self.operating_settings)
+
+        self.default_simple_move_feedrate = get_config_parser().getfloat('Positioning', 'DefaultSimpleMoveFeedrate', fallback=1000.0)
+        self.stage_center = get_config_parser().getint('Positioning', 'StageCenter', fallback=250)
     
     def home(self):
         print("Starting homing cycle...")
@@ -32,16 +43,57 @@ class PositioningController:
         print("Homing cycle completed.")
         return response
     
-    def simple_move(self, axis: str, distance: float, feedrate: float):
+    def simple_move(self, axis: str, distance: float, feedrate: float = None):
         if axis not in ['X', 'Y', 'Z']:
             raise ValueError("Axis must be 'X', 'Y', or 'Z'")
+        if feedrate is None:
+            feedrate = self.default_simple_move_feedrate
         self.set_relative_positioning()
         move_cmd = f"G1 {axis}{distance:.3f} F{feedrate:.3f}"
         print(f"Sending move command: {move_cmd}")
         response = self.grbl_streamer.send_command(move_cmd)
         print("Move command response:", response)
         return response
+
+    def absolute_move(self, axis: str, position: float, feedrate: float = None):
+        if axis not in ['X', 'Y', 'Z']:
+            raise ValueError("Axis must be 'X', 'Y', or 'Z'")
+        if feedrate is None:
+            feedrate = self.default_simple_move_feedrate
+        self.set_absolute_positioning()
+        move_cmd = f"G1 {axis}{position:.3f} F{feedrate:.3f}"
+        print(f"Sending move command: {move_cmd}")
+        response = self.grbl_streamer.send_command(move_cmd)
+        print("Move command response:", response)
+        self.set_relative_positioning()
+        return response
+
+    def center_stage(self):
+        self.absolute_move('Z', self.stage_center)
+
+    def calibrate_center(self):
+        pos = self.get_absolute_positions()
+        self.stage_center = pos.z / 2
+        config = get_config_parser()
+        config.set('Positioning', 'StageCenter', str(self.stage_center))
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
+        print(f"Calibrated stage center to: {self.stage_center}")
+        self.center_stage()
     
+    def get_absolute_positions(self):
+        status = self.grbl_streamer.get_status()
+        if '<' in status and '>' in status:
+            pos_part = status.split('|')[1]  # Get the part with positions
+            if pos_part.startswith('MPos:'):
+                pos_values = pos_part[5:].split(',')
+                if len(pos_values) >= 3:
+                    x_pos = float(pos_values[0])
+                    y_pos = float(pos_values[1])
+                    z_pos = float(pos_values[2])
+                    return Position(x_pos, y_pos, z_pos)
+        raise ValueError("Could not parse position from GRBL status: " + status)
+
     def set_relative_positioning(self):
         response = self.grbl_streamer.send_command("G91")  # Relative positioning
         print("Set to relative positioning:", response)
@@ -204,7 +256,7 @@ class GRBLStreamer:
 
     def start(self):
         """Start streaming threads."""
-        if not "Idle" in self.send_command('?'):
+        if not "Idle" in self.get_status():
             raise RuntimeError("GRBL not in Idle state. Cannot start streaming.")
         if self.loop_method is None:
             raise ValueError("No loop method defined for GRBLStreamer.")
@@ -283,11 +335,8 @@ class GRBLStreamer:
     
     def get_status(self):
         """Get current status from GRBL."""
-        if self.ser:
-            self.ser.write(b'?\n')
-            time.sleep(0.001)  # Wait for response
-            response = self.ser.read_all().decode().strip()
-            return response
+        return self.send_command('?')
+
 
 if __name__ == "__main__":
     positioning_control = PositioningController()
