@@ -16,8 +16,8 @@ OPERATING_SETTINGS = {
     '21':1,  # Hard limits enabled
     '22':1,  # Homing cycle enabled
     '23':7,  # Homing dir invert mask (7 = 0b111, all inverted)
-    '24':50,  # Homing feed rate
-    '25':200,  # Homing seek rate
+    '24':100,  # Homing feed rate
+    '25':400,  # Homing seek rate
     '26':250,  # (homing debounce, msec)
     '27':5,  # Homing pull-off (in mm)
 
@@ -38,9 +38,9 @@ OPERATING_SETTINGS = {
     '121':10,  # (y accel, mm/sec^2)
     '122':100,  # (z accel, mm/sec^2)
 
-    '130':135,  # (x max travel, mm)
-    '131':135,  # (y max travel, mm)
-    '132':200,  # (z max travel, mm)
+    '130':1012,  # (x max travel, mm) 135 mm real distance times real_distance_travelled/claimed_distance_travelled: 135*((200*32/2)/427) = 1 011,71
+    '131':1012,  # (y max travel, mm)
+    '132':500,  # (z max travel, mm)
 }
 
 # Operating settings are used for homing as well. Switching settings after homing leads to issues (X and Y axis linked).
