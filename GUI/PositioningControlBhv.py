@@ -41,6 +41,9 @@ class PositioningControlBhv:
         self.ui.positioning_stage_move_to_center_pushButton.clicked.connect(self.positioning_controller.center_stage)
         self.ui.positioning_stage_calibrate_center_pushButton.clicked.connect(self.calibrate_center)
 
+        # Disable hard limits when HV is powered on
+        self.ui.HV_power_checkBox.stateChanged.connect(self._hv_power_changed)
+
     def toggle_positioning_power(self):
         positioning_power_on = self.ui.positioning_power_checkBox.isChecked()
         self.gpio_controller.enable_positioning_power(positioning_power_on)
@@ -63,3 +66,9 @@ class PositioningControlBhv:
     def _init_stage_amplitude(self):
         amplitude_limit = get_config_parser().getfloat("Positioning", "StageCenter")
         self.ui.positioning_stage_amplitude_spinBox.setMaximum(abs(amplitude_limit))
+    
+    def _hv_power_changed(self):
+        hv_power_on = self.ui.HV_power_checkBox.isChecked()
+        if self.positioning_controller.grbl_streamer.is_connected():
+            self.positioning_controller.set_hard_limits(not hv_power_on)
+        

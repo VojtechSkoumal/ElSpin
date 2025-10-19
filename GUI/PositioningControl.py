@@ -145,6 +145,9 @@ class PositioningController:
         common_feedrate = math.sqrt(fx**2 + fy**2 + fz**2)
         
         return x_dist, y_dist, common_feedrate
+
+    def set_hard_limits(self, enabled: bool):
+        self.grbl_streamer.send_command(f"$21={'1' if enabled else '0'}")
     
     def dummy_loop(self, previous_command: str):
         """Example loop method to be assigned to GRBLStreamer.loop_method"""
@@ -185,6 +188,9 @@ class GRBLStreamer:
         self.loop_method = None
         self.last_command = None
         self.ser_communication_lock = threading.Lock()
+    
+    def is_connected(self):
+        return self.ser is not None and self.ser.is_open
 
     def connect(self):
         self.ser = serial.Serial(self.port, self.baudrate)
