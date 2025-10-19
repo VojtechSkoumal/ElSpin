@@ -76,7 +76,8 @@ class PositioningControlBhv:
                                                      stage_amplitude=self.ui.positioning_stage_amplitude_spinBox.value())
         duration = self.ui.positioning_experiment_duration_spinBox.value()
         if duration > 0:
-            self._experiment_timer = threading.Timer(duration, self.stop_experiment)
+            self._experiment_timer = threading.Timer(duration*60, self.stop_experiment)  # duration is in minutes
+            self._experiment_timer.daemon = True
             self._experiment_timer.start()
 
     def stop_experiment(self):
