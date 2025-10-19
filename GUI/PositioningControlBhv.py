@@ -20,6 +20,8 @@ class PositioningControlBhv:
     def connections(self):
         self.ui.positioning_power_checkBox.stateChanged.connect(self.toggle_positioning_power)
         self.ui.positioning_home_pushButton.clicked.connect(self.home)
+        self.ui.positioning_experiment_start_pushButton.clicked.connect(self.start_experiment)
+        self.ui.positioning_experiment_stop_pushButton.clicked.connect(self.stop_experiment)
 
         # Pump 1 controls
         self.ui.positioning_pump_1_move_back_10_pushButton.clicked.connect(lambda: self.positioning_controller.simple_move("X", -10))
@@ -54,6 +56,14 @@ class PositioningControlBhv:
     def home(self):
         self.positioning_controller.home()
         self.ui.positioning_homing_done_widget.setEnabled(True)
+    
+    def start_experiment(self):
+        self.ui.positioning_experiment_running_widget.setEnabled(False)
+        self.positioning_controller.start_experiment(pump_1_flowrate=self.ui.positioning_pump_1_flow_doubleSpinBox.value(),
+                                                     pump_2_flowrate=self.ui.positioning_pump_2_flow_doubleSpinBox.value(),
+                                                     stage_feedrate=self.ui.positioning_stage_speed_spinBox.value(),
+                                                     stage_amplitude=self.ui.positioning_stage_amplitude_spinBox.value(),
+                                                     duration=self.ui.positioning_experiment_duration_spinBox.value())
     
     def calibrate_center(self):
         self.positioning_controller.calibrate_center()

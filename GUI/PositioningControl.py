@@ -28,11 +28,13 @@ class PositioningController:
 
         self.grbl_streamer = GRBLStreamer(port=get_config_parser().get('Positioning', 'COMPort'))
         self.grbl_streamer.connect()
-        self.grbl_streamer.loop_method = self.dummy_loop  # Example loop method
+        self.grbl_streamer.loop_method = self.loop_method  # Loop method for generating the next G-code command during experiment
         self.set_settings(self.operating_settings)
 
         self.default_simple_move_feedrate = get_config_parser().getfloat('Positioning', 'DefaultSimpleMoveFeedrate', fallback=1000.0)
         self.stage_center = get_config_parser().getfloat('Positioning', 'StageCenter')
+
+        self.experiment_initial_command: str = None
     
     def home(self):
         print("Starting homing cycle...")
@@ -89,7 +91,31 @@ class PositioningController:
         except FileNotFoundError:
             print(f'Could not save StageCenter to config file. Local config file does not exist.')
         self.center_stage()
-    
+
+    def start_experiment(self, pump_1_flowrate, pump_2_flowrate, stage_feedrate, stage_amplitude, duration):
+        """Start experiment and schedule automatic stop.
+
+        Parameters:
+        pump_1_flowrate : float
+        pump_2_flowrate : float
+        stage_feedrate  : float
+        stage_amplitude : float
+        duration        : float -> seconds to run before stopping automatically
+        """
+        self.move_stage_to_start_position(stage_amplitude, stage_feedrate)
+        self.generate_experiment_initial_command(pump_1_flowrate, pump_2_flowrate, stage_feedrate, stage_amplitude)
+        self.grbl_streamer.clean_experiment_timer()
+
+        # Start streaming motion
+        self.grbl_streamer.start()
+        
+        # Schedule automatic stop
+        self.grbl_streamer.schedule_experiment_timer(duration)
+
+    def move_stage_to_start_position(self, amplitude, feedrate):
+        start_z = self.stage_center + amplitude  # Starting on the rightmost position
+        self.absolute_move('Z', start_z, feedrate=feedrate)
+
     def get_absolute_positions(self):
         status = self.grbl_streamer.get_status()
         # response pattern: <Idle,MPos:0.000,0.000,0.000,WPos:0.000,0.000,0.000,Lim:000>
@@ -117,7 +143,28 @@ class PositioningController:
                 print(f"Error setting {address} to {value}: {response}")
             else:
                 print(f"Set {address} to {value}: {response}")
-    
+
+    def generate_experiment_initial_command(self, pump_1_flowrate, pump_2_flowrate, stage_feedrate, stage_amplitude):
+        if stage_amplitude > 0:
+            x_dist, y_dist, common_feedrate = self.match_axes_by_feedrate(
+                z_dist=2 * stage_amplitude,
+                fz=stage_feedrate,
+                fx=pump_1_flowrate,
+                fy=pump_2_flowrate
+            )
+        else:
+            x_dist = 100 if pump_1_flowrate > 0 else 0
+            if pump_2_flowrate > 0:
+                if pump_1_flowrate > 0:
+                    y_dist = 100 * (pump_2_flowrate / pump_1_flowrate)
+                else:
+                    y_dist = 100
+            else:
+                y_dist = 0
+            common_feedrate = math.sqrt(pump_1_flowrate**2 + pump_2_flowrate**2)
+        self.experiment_initial_command = f"G1 X{x_dist} Y{y_dist} Z{-2*stage_amplitude} F{common_feedrate}"
+
+    @staticmethod
     def match_axes_by_feedrate(z_dist, fz, fx, fy):
         """
         Given a Z distance and per-axis feedrates, compute:
@@ -149,10 +196,10 @@ class PositioningController:
     def set_hard_limits(self, enabled: bool):
         self.grbl_streamer.send_command(f"$21={'1' if enabled else '0'}")
     
-    def dummy_loop(self, previous_command: str):
+    def loop_method(self, previous_command: str):
         """Example loop method to be assigned to GRBLStreamer.loop_method"""
         if not previous_command:
-            return 'G1 X0 Y0 Z10 F500'  # Initial command
+            return self.experiment_initial_command 
         previous_coords = self.parse_move_command(previous_command)
         return f'G1 X{previous_coords.get("X", 0)} Y{previous_coords.get("Y", 0)} Z{-previous_coords.get("Z", 0)} F{previous_coords.get("F", 0)}'
     
@@ -188,6 +235,7 @@ class GRBLStreamer:
         self.loop_method = None
         self.last_command = None
         self.ser_communication_lock = threading.Lock()
+        self._experiment_timer: threading.Timer | None = None
     
     def is_connected(self):
         return self.ser is not None and self.ser.is_open
@@ -281,6 +329,23 @@ class GRBLStreamer:
     def send_move_to_queue(self, gcode):
         """Queue a G-code command for sending."""
         self.cmd_queue.put(gcode)
+    
+    def schedule_experiment_timer(self, duration: float):
+        """Schedule a experiment timer to stop the experiment after duration minutes."""
+        self.clean_experiment_timer()
+        self._experiment_timer = threading.Timer(duration * 60, self.stop)
+        self._experiment_timer.daemon = True
+        self._experiment_timer.start()
+    
+    def clean_experiment_timer(self):
+        """Cancel and clear any existing experiment timer."""
+        if self._experiment_timer is not None:
+            try:
+                self._experiment_timer.cancel()
+            except Exception:
+                pass
+            finally:
+                self._experiment_timer = None
 
     # def pause(self):
     #     """Pause streaming."""
@@ -301,6 +366,7 @@ class GRBLStreamer:
     def stop(self):
         """Stop streaming and send soft reset to GRBL."""
         print("[GRBL] Stopping...")
+        self.clean_experiment_timer()
         self.stop_flag.set()
         self.soft_reset()
         # Wait for threads to finish
