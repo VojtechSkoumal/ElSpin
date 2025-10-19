@@ -110,7 +110,8 @@ class PositioningController:
         self.grbl_streamer.start()
         
         # Schedule automatic stop
-        self.grbl_streamer.schedule_experiment_timer(duration)
+        if duration > 0:
+            self.grbl_streamer.schedule_experiment_timer(duration)
 
     def move_stage_to_start_position(self, amplitude, feedrate):
         start_z = self.stage_center + amplitude  # Starting on the rightmost position
