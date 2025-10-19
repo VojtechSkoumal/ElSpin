@@ -2,7 +2,7 @@ from GUI.mainwindow import Ui_MainWindow
 from GUI.PositioningControl import PositioningController
 from GUI.GPIOControl import GPIOController
 
-from GUI.ConfigParser import get_config_parser, edit_config_file
+from GUI.ConfigParser import get_config_parser
 
 
 class PositioningControlBhv:
@@ -58,10 +58,6 @@ class PositioningControlBhv:
     def calibrate_center(self):
         self.positioning_controller.calibrate_center()
         self.ui.positioning_stage_amplitude_spinBox.setMaximum(abs(self.positioning_controller.stage_center))
-        try:
-            edit_config_file("Positioning", "StageCenter", str(self.positioning_controller.stage_center))
-        except FileNotFoundError:
-            print(f'Could not save StageCenter to config file. Local config file does not exist.')
     
     def _init_stage_amplitude(self):
         amplitude_limit = get_config_parser().getfloat("Positioning", "StageCenter")

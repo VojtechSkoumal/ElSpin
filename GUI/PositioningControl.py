@@ -8,7 +8,7 @@ import math
 import numpy as np
 import re
 
-from GUI.ConfigParser import get_config_parser
+from GUI.ConfigParser import get_config_parser, edit_config_file
 from GUI.GRBLSettings import OPERATING_SETTINGS
 
 
@@ -83,11 +83,11 @@ class PositioningController:
     def calibrate_center(self):
         pos = self.get_absolute_positions()
         self.stage_center = pos.z / 2
-        config = get_config_parser()
-        config.set('Positioning', 'StageCenter', str(self.stage_center))
-        with open('config.ini', 'w') as configfile:
-            config.write(configfile)
         print(f"Calibrated stage center to: {self.stage_center}")
+        try:
+            edit_config_file("Positioning", "StageCenter", str(self.stage_center))
+        except FileNotFoundError:
+            print(f'Could not save StageCenter to config file. Local config file does not exist.')
         self.center_stage()
     
     def get_absolute_positions(self):
