@@ -386,7 +386,6 @@ class GRBLStreamer:
                 self.sent_cmd_lengths.get()
             self.used_buffer = 0
             self.last_command = None
-        self.send_command('$X')  # Unlock the machine
         print("[GRBL] All threads stopped and buffers cleared.")
 
     def soft_reset(self):
