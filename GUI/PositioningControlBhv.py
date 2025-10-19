@@ -1,3 +1,4 @@
+import time
 from GUI.mainwindow import Ui_MainWindow
 from GUI.PositioningControl import PositioningController
 from GUI.GPIOControl import GPIOController
@@ -64,6 +65,11 @@ class PositioningControlBhv:
                                                      stage_feedrate=self.ui.positioning_stage_speed_spinBox.value(),
                                                      stage_amplitude=self.ui.positioning_stage_amplitude_spinBox.value(),
                                                      duration=self.ui.positioning_experiment_duration_spinBox.value())
+    
+    def stop_experiment(self):
+        self.positioning_controller.grbl_streamer.stop()
+        time.sleep(0.5)  # Give some time to stop
+        self.ui.positioning_experiment_running_widget.setEnabled(True)
     
     def calibrate_center(self):
         self.positioning_controller.calibrate_center()
