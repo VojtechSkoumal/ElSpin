@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import traceback
 
 import logging
@@ -93,6 +94,7 @@ if __name__ == "__main__":
         logger.error(ex)
     finally:
         elspin_ui.hv_controller.close()
+        time.sleep(0.5)
         elspin_ui.gpio_controller.finalize()
 
     elspin_ui.close()
