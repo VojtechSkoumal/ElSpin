@@ -115,6 +115,9 @@ class PositioningController:
     def move_stage_to_start_position(self, amplitude, feedrate):
         start_z = self.stage_center + amplitude  # Starting on the rightmost position
         self.absolute_move('Z', start_z, feedrate=feedrate)
+        pos = self.get_absolute_positions()
+        move_time = abs(pos.z - start_z) / feedrate * 60  # Convert to seconds
+        time.sleep(move_time + 0.5)  # Extra buffer time
 
     def get_absolute_positions(self):
         status = self.grbl_streamer.get_status()
