@@ -17,6 +17,7 @@ class PositioningControlBhv:
     
     def init(self):
         self._init_stage_amplitude()
+        self._init_send_command_widget()
 
     def connections(self):
         self.ui.positioning_power_checkBox.stateChanged.connect(self.toggle_positioning_power)
@@ -46,6 +47,11 @@ class PositioningControlBhv:
 
         # Disable hard limits when HV is powered on
         self.ui.HV_power_checkBox.stateChanged.connect(self._hv_power_changed)
+
+        # DEV commands
+        self.ui.positioning_send_command_pushButton.clicked.connect(
+            lambda: self.positioning_controller.grbl_streamer.send_command(self.ui.positioning_send_command_lineEdit.text())
+        )
 
     def toggle_positioning_power(self):
         positioning_power_on = self.ui.positioning_power_checkBox.isChecked()
@@ -83,4 +89,7 @@ class PositioningControlBhv:
         hv_power_on = self.ui.HV_power_checkBox.isChecked()
         if self.positioning_controller.grbl_streamer.is_connected():
             self.positioning_controller.set_hard_limits(not hv_power_on)
+        
+    def _init_send_command_widget(self):
+        self.ui.positioning_send_command_groupBox.setVisible(get_config_parser().getboolean("DEV", "EnablePositioningCMDs"))
         

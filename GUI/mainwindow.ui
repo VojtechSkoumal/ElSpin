@@ -243,16 +243,6 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="1">
-             <widget class="QPushButton" name="positioning_home_pushButton">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>Home</string>
-              </property>
-             </widget>
-            </item>
             <item row="1" column="0" colspan="2">
              <widget class="QWidget" name="positioning_homing_done_widget" native="true">
               <property name="enabled">
@@ -547,7 +537,17 @@
               </layout>
              </widget>
             </item>
-            <item row="2" column="0">
+            <item row="0" column="1">
+             <widget class="QPushButton" name="positioning_home_pushButton">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Home</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
              <spacer name="positioning_verticalSpacer">
               <property name="orientation">
                <enum>Qt::Orientation::Vertical</enum>
@@ -559,6 +559,25 @@
                </size>
               </property>
              </spacer>
+            </item>
+            <item row="2" column="0" colspan="2">
+             <widget class="QGroupBox" name="positioning_send_command_groupBox">
+              <property name="title">
+               <string>DEV - Send Command</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_9">
+               <item row="0" column="0">
+                <widget class="QLineEdit" name="positioning_send_command_lineEdit"/>
+               </item>
+               <item row="0" column="1">
+                <widget class="QPushButton" name="positioning_send_command_pushButton">
+                 <property name="text">
+                  <string>Send</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
             </item>
            </layout>
           </widget>
