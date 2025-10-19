@@ -19,7 +19,7 @@ OPERATING_SETTINGS = {
     '24':100,  # Homing feed rate
     '25':400,  # Homing seek rate
     '26':250,  # (homing debounce, msec)
-    '27':5,  # Homing pull-off (in mm)
+    '27':10,  # Homing pull-off (in mm)
 
     # For pumps (X and Y axes), we set steps per mm such that 1 mm/min = 1 ml/h
     # The actual volume pumped is then V = Distance / 60 
