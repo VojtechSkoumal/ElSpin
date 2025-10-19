@@ -92,7 +92,7 @@ class PositioningController:
             print(f'Could not save StageCenter to config file. Local config file does not exist.')
         self.center_stage()
 
-    def start_experiment(self, pump_1_flowrate, pump_2_flowrate, stage_feedrate, stage_amplitude, duration):
+    def start_experiment(self, pump_1_flowrate, pump_2_flowrate, stage_feedrate, stage_amplitude):
         """Start experiment and schedule automatic stop.
 
         Parameters:
@@ -104,14 +104,9 @@ class PositioningController:
         """
         self.move_stage_to_start_position(stage_amplitude, stage_feedrate)
         self.generate_experiment_initial_command(pump_1_flowrate, pump_2_flowrate, stage_feedrate, stage_amplitude)
-        self.grbl_streamer.clean_experiment_timer()
 
         # Start streaming motion
         self.grbl_streamer.start()
-        
-        # Schedule automatic stop
-        if duration > 0:
-            self.grbl_streamer.schedule_experiment_timer(duration)
 
     def move_stage_to_start_position(self, amplitude, feedrate):
         start_z = self.stage_center + amplitude  # Starting on the rightmost position
@@ -239,7 +234,6 @@ class GRBLStreamer:
         self.loop_method = None
         self.last_command = None
         self.ser_communication_lock = threading.Lock()
-        self._experiment_timer: threading.Timer | None = None
     
     def is_connected(self):
         return self.ser is not None and self.ser.is_open
@@ -333,23 +327,6 @@ class GRBLStreamer:
     def send_move_to_queue(self, gcode):
         """Queue a G-code command for sending."""
         self.cmd_queue.put(gcode)
-    
-    def schedule_experiment_timer(self, duration: float):
-        """Schedule a experiment timer to stop the experiment after duration minutes."""
-        self.clean_experiment_timer()
-        self._experiment_timer = threading.Timer(duration * 60, self.stop)
-        self._experiment_timer.daemon = True
-        self._experiment_timer.start()
-    
-    def clean_experiment_timer(self):
-        """Cancel and clear any existing experiment timer."""
-        if self._experiment_timer is not None:
-            try:
-                self._experiment_timer.cancel()
-            except Exception:
-                pass
-            finally:
-                self._experiment_timer = None
 
     # def pause(self):
     #     """Pause streaming."""
@@ -370,7 +347,6 @@ class GRBLStreamer:
     def stop(self):
         """Stop streaming and send soft reset to GRBL."""
         print("[GRBL] Stopping...")
-        self.clean_experiment_timer()
         self.stop_flag.set()
         self.soft_reset()
         # Wait for threads to finish

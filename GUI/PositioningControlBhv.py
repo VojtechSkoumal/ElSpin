@@ -1,8 +1,9 @@
 import time
+import threading
+
 from GUI.mainwindow import Ui_MainWindow
 from GUI.PositioningControl import PositioningController
 from GUI.GPIOControl import GPIOController
-
 from GUI.ConfigParser import get_config_parser
 
 
@@ -11,6 +12,8 @@ class PositioningControlBhv:
         self.ui = ui
         self.positioning_controller = positioning_controller
         self.gpio_controller = gpio_controller
+
+        self._experiment_timer: threading.Timer | None = None
 
         self.init()
         self.connections()
@@ -66,17 +69,32 @@ class PositioningControlBhv:
     
     def start_experiment(self):
         self.ui.positioning_experiment_running_widget.setEnabled(False)
+        self._clean_experiment_timer()
         self.positioning_controller.start_experiment(pump_1_flowrate=self.ui.positioning_pump_1_flow_doubleSpinBox.value(),
                                                      pump_2_flowrate=self.ui.positioning_pump_2_flow_doubleSpinBox.value(),
                                                      stage_feedrate=self.ui.positioning_stage_speed_spinBox.value(),
-                                                     stage_amplitude=self.ui.positioning_stage_amplitude_spinBox.value(),
-                                                     duration=self.ui.positioning_experiment_duration_spinBox.value())
-    
+                                                     stage_amplitude=self.ui.positioning_stage_amplitude_spinBox.value())
+        duration = self.ui.positioning_experiment_duration_spinBox.value()
+        if duration > 0:
+            self._experiment_timer = threading.Timer(duration, self.stop_experiment)
+            self._experiment_timer.start()
+
     def stop_experiment(self):
+        self._clean_experiment_timer()
         self.positioning_controller.grbl_streamer.stop()
         time.sleep(0.5)  # Give some time to stop
         self.ui.positioning_experiment_running_widget.setEnabled(True)
     
+    def _clean_experiment_timer(self):
+        """Cancel and clear any existing experiment timer."""
+        if self._experiment_timer is not None:
+            try:
+                self._experiment_timer.cancel()
+            except Exception:
+                pass
+            finally:
+                self._experiment_timer = None
+
     def calibrate_center(self):
         self.positioning_controller.calibrate_center()
         self.ui.positioning_stage_amplitude_spinBox.setMaximum(abs(self.positioning_controller.stage_center))
