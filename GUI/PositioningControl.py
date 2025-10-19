@@ -386,13 +386,15 @@ class GRBLStreamer:
                 self.sent_cmd_lengths.get()
             self.used_buffer = 0
             self.last_command = None
+        while "Alarm" not in self.get_status():
+            time.sleep(0.1)
+        self.send_command('$X')  # Unlock the machine
         print("[GRBL] All threads stopped and buffers cleared.")
 
     def soft_reset(self):
         """Send soft reset to GRBL."""
         print("[GRBL] Sending soft reset...")
         self.send_command('\x18')  # Ctrl+X
-        self.send_command('$X')    # Unlock
         
     def close(self):
         """Close serial port."""
