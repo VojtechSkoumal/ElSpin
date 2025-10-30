@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>903</width>
-    <height>720</height>
+    <height>731</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -497,20 +497,6 @@
                   <string>Experiment</string>
                  </property>
                  <layout class="QGridLayout" name="gridLayout_7">
-                  <item row="1" column="0">
-                   <widget class="QPushButton" name="positioning_experiment_start_pushButton">
-                    <property name="text">
-                     <string>Start</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="1">
-                   <widget class="QPushButton" name="positioning_experiment_stop_pushButton">
-                    <property name="text">
-                     <string>Stop</string>
-                    </property>
-                   </widget>
-                  </item>
                   <item row="0" column="0">
                    <widget class="QLabel" name="positioning_experiment_duration_label">
                     <property name="text">
@@ -521,6 +507,20 @@
                     </property>
                    </widget>
                   </item>
+                  <item row="2" column="0">
+                   <widget class="QPushButton" name="positioning_experiment_start_pushButton">
+                    <property name="text">
+                     <string>Start</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="2" column="1">
+                   <widget class="QPushButton" name="positioning_experiment_stop_pushButton">
+                    <property name="text">
+                     <string>Stop</string>
+                    </property>
+                   </widget>
+                  </item>
                   <item row="0" column="1">
                    <widget class="QSpinBox" name="positioning_experiment_duration_spinBox">
                     <property name="toolTip">
@@ -528,6 +528,23 @@
                     </property>
                     <property name="maximum">
                      <number>600</number>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="0">
+                   <widget class="QLabel" name="positioning_experiment_remaining_time_label">
+                    <property name="text">
+                     <string>Remaining Time [min:sec]:</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="1">
+                   <widget class="QLabel" name="positioning_experiment_remaining_time_value_label">
+                    <property name="text">
+                     <string>NaN</string>
                     </property>
                    </widget>
                   </item>
