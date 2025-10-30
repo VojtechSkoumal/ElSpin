@@ -345,26 +345,29 @@ class GRBLStreamer:
     #     self.send_command('~')  # Resume command in GRBL
 
     def stop(self):
-        """Stop streaming and send soft reset to GRBL."""
+        """Stop streaming and immediately halt motion."""
         print("[GRBL] Stopping...")
         
-        # First, send feed hold to pause motion immediately
-        print("[GRBL] Sending feed hold to pause motion...")
-        with self.ser_communication_lock:
-            self.ser.write(b'!')  # Feed hold command - bypasses buffer
-            time.sleep(0.1)  # Give GRBL time to respond
-        
-        # Stop the send/read threads
+        # First, stop the send thread to prevent new commands from being generated
+        print("[GRBL] Stopping command generation...")
         self.stop_flag.set()
         
-        # Wait for threads to finish
-        if self.send_thread:
-            self.send_thread.join()
-        if self.read_thread:
-            self.read_thread.join()
+        # Immediately flush the serial output buffer to prevent queued commands from being sent
+        with self.ser_communication_lock:
+            self.ser.reset_output_buffer()  # Clear any unsent data in PC buffer
+            print("[GRBL] Flushed serial output buffer")
         
-        # Now send soft reset to clear everything
+        # Wait for send thread to stop generating new commands
+        if self.send_thread:
+            self.send_thread.join(timeout=1.0)
+        
+        # Send soft reset immediately to trigger alarm and stop motion
+        # Soft reset causes GRBL to abort motion and enter alarm state
         self.soft_reset()
+        
+        # Wait for read thread to finish
+        if self.read_thread:
+            self.read_thread.join(timeout=1.0)
         
         # Clear command queue and buffer
         with self.buffer_data_lock:
@@ -376,8 +379,12 @@ class GRBLStreamer:
             self.last_command = None
         
         # Wait for alarm state and unlock
-        while "Alarm" not in self.get_status():
+        print("[GRBL] Waiting for alarm state...")
+        timeout = time.time() + 2.0  # 2 second timeout
+        while "Alarm" not in self.get_status() and time.time() < timeout:
             time.sleep(0.1)
+        
+        print("[GRBL] Unlocking machine...")
         self.send_command('$X')  # Unlock the machine
         print("[GRBL] All threads stopped and buffers cleared.")
 
@@ -386,7 +393,10 @@ class GRBLStreamer:
         print("[GRBL] Sending soft reset...")
         with self.ser_communication_lock:
             self.ser.write(b'\x18')  # Ctrl+X - send as bytes directly
+            self.ser.flush()  # Ensure it's sent immediately
             time.sleep(0.5)  # Wait for reset to complete
+            # Clear any response data
+            self.ser.reset_input_buffer()
         
     def close(self):
         """Close serial port."""
