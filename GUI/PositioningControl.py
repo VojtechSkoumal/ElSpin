@@ -152,12 +152,12 @@ class PositioningController:
                 fy=pump_2_flowrate
             )
         else:
-            x_dist = 100 if pump_1_flowrate > 0 else 0
+            x_dist = 1 if pump_1_flowrate > 0 else 0
             if pump_2_flowrate > 0:
                 if pump_1_flowrate > 0:
-                    y_dist = (pump_2_flowrate / pump_1_flowrate) * 100
+                    y_dist = (pump_2_flowrate / pump_1_flowrate)
                 else:
-                    y_dist = 100
+                    y_dist = 1
             else:
                 y_dist = 0
             common_feedrate = math.sqrt(pump_1_flowrate**2 + pump_2_flowrate**2)
