@@ -147,7 +147,7 @@
                   <item row="1" column="2">
                    <widget class="QSpinBox" name="HV_target_voltage_spinBox">
                     <property name="maximum">
-                     <number>30000</number>
+                     <number>15000</number>
                     </property>
                     <property name="singleStep">
                      <number>1000</number>
