@@ -155,7 +155,7 @@ class PositioningController:
             x_dist = 100 if pump_1_flowrate > 0 else 0
             if pump_2_flowrate > 0:
                 if pump_1_flowrate > 0:
-                    y_dist = 100 * (pump_2_flowrate / pump_1_flowrate)
+                    y_dist = (pump_2_flowrate / pump_1_flowrate) * 100
                 else:
                     y_dist = 100
             else:
@@ -347,13 +347,25 @@ class GRBLStreamer:
     def stop(self):
         """Stop streaming and send soft reset to GRBL."""
         print("[GRBL] Stopping...")
+        
+        # First, send feed hold to pause motion immediately
+        print("[GRBL] Sending feed hold to pause motion...")
+        with self.ser_communication_lock:
+            self.ser.write(b'!')  # Feed hold command - bypasses buffer
+            time.sleep(0.1)  # Give GRBL time to respond
+        
+        # Stop the send/read threads
         self.stop_flag.set()
-        self.soft_reset()
+        
         # Wait for threads to finish
         if self.send_thread:
             self.send_thread.join()
         if self.read_thread:
             self.read_thread.join()
+        
+        # Now send soft reset to clear everything
+        self.soft_reset()
+        
         # Clear command queue and buffer
         with self.buffer_data_lock:
             while not self.cmd_queue.empty():
@@ -362,6 +374,8 @@ class GRBLStreamer:
                 self.sent_cmd_lengths.get()
             self.used_buffer = 0
             self.last_command = None
+        
+        # Wait for alarm state and unlock
         while "Alarm" not in self.get_status():
             time.sleep(0.1)
         self.send_command('$X')  # Unlock the machine
@@ -370,7 +384,9 @@ class GRBLStreamer:
     def soft_reset(self):
         """Send soft reset to GRBL."""
         print("[GRBL] Sending soft reset...")
-        self.send_command('\x18')  # Ctrl+X
+        with self.ser_communication_lock:
+            self.ser.write(b'\x18')  # Ctrl+X - send as bytes directly
+            time.sleep(0.5)  # Wait for reset to complete
         
     def close(self):
         """Close serial port."""
