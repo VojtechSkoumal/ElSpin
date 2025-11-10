@@ -51,13 +51,8 @@ class PositioningControlBhv:
         self.ui.positioning_stage_move_to_center_pushButton.clicked.connect(self.positioning_controller.center_stage)
         self.ui.positioning_stage_calibrate_center_pushButton.clicked.connect(self.calibrate_center)
 
-        # Disable hard limits when HV is powered on
+        # Disable hard limits and Homing when HV is powered on
         self.ui.HV_power_checkBox.stateChanged.connect(self._hv_power_changed)
-
-        # Disable homing button when HV is powered on
-        self.ui.HV_power_checkBox.stateChanged.connect(
-            lambda: self.ui.positioning_home_pushButton.setEnabled(not self.ui.HV_power_checkBox.isChecked())
-        )
 
         # DEV commands
         self.ui.positioning_send_command_pushButton.clicked.connect(
@@ -73,7 +68,8 @@ class PositioningControlBhv:
 
     def home(self):
         self.positioning_controller.home()
-        self.ui.positioning_homing_done_widget.setEnabled(True)
+        if not self.ui.HV_power_checkBox.isChecked():
+            self.ui.positioning_homing_done_widget.setEnabled(True)
     
     def start_experiment(self):
         self.ui.positioning_experiment_running_widget.setEnabled(False)
@@ -162,8 +158,8 @@ class PositioningControlBhv:
         amplitude_limit = get_config_parser().getfloat("Positioning", "StageCenter")
         self.ui.positioning_stage_amplitude_spinBox.setMaximum(abs(amplitude_limit))
     
-    def _hv_power_changed(self):
-        hv_power_on = self.ui.HV_power_checkBox.isChecked()
+    def _hv_power_changed(self, hv_power_on):
+        self.ui.positioning_home_pushButton.setEnabled(not hv_power_on)
         if self.positioning_controller.grbl_streamer.is_connected():
             self.positioning_controller.set_hard_limits(not hv_power_on)
         
