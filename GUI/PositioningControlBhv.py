@@ -54,6 +54,11 @@ class PositioningControlBhv:
         # Disable hard limits when HV is powered on
         self.ui.HV_power_checkBox.stateChanged.connect(self._hv_power_changed)
 
+        # Disable homing button when HV is powered on
+        self.ui.HV_power_checkBox.stateChanged.connect(
+            lambda: self.ui.positioning_home_pushButton.setEnabled(not self.ui.HV_power_checkBox.isChecked())
+        )
+
         # DEV commands
         self.ui.positioning_send_command_pushButton.clicked.connect(
             lambda: self.positioning_controller.grbl_streamer.send_command(self.ui.positioning_send_command_lineEdit.text())
