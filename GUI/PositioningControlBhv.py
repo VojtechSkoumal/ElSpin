@@ -59,8 +59,7 @@ class PositioningControlBhv:
             lambda: self.positioning_controller.grbl_streamer.send_command(self.ui.positioning_send_command_lineEdit.text())
         )
 
-    def toggle_positioning_power(self):
-        positioning_power_on = self.ui.positioning_power_checkBox.isChecked()
+    def toggle_positioning_power(self, positioning_power_on):
         self.gpio_controller.enable_positioning_power(positioning_power_on)
         self.ui.positioning_home_pushButton.setEnabled(positioning_power_on and not self.ui.HV_power_checkBox.isChecked())
         if not positioning_power_on:
