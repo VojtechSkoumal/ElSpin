@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>903</width>
-    <height>731</height>
+    <height>753</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -134,7 +134,14 @@
                   <property name="spacing">
                    <number>6</number>
                   </property>
-                  <item row="1" column="1">
+                  <item row="2" column="3">
+                   <widget class="QPushButton" name="HV_set_target_voltage_pushButton">
+                    <property name="text">
+                     <string>Set</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="2" column="1">
                    <widget class="QLabel" name="HV_target_voltage_label">
                     <property name="text">
                      <string>Target Voltage [V]:</string>
@@ -144,43 +151,13 @@
                     </property>
                    </widget>
                   </item>
-                  <item row="1" column="2">
-                   <widget class="QSpinBox" name="HV_target_voltage_spinBox">
-                    <property name="maximum">
-                     <number>15000</number>
-                    </property>
-                    <property name="singleStep">
-                     <number>1000</number>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="1" column="3">
-                   <widget class="QPushButton" name="HV_set_target_voltage_pushButton">
-                    <property name="text">
-                     <string>Set</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="2" column="2" colspan="2">
+                  <item row="3" column="2" colspan="2">
                    <widget class="QPushButton" name="HV_enable_pushButton">
                     <property name="text">
                      <string>Enable</string>
                     </property>
                     <property name="checkable">
                      <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="2" column="1">
-                   <widget class="QLabel" name="HV_state_label">
-                    <property name="styleSheet">
-                     <string notr="true">font: 900 9pt &quot;Segoe UI&quot;;</string>
-                    </property>
-                    <property name="text">
-                     <string>OFF</string>
-                    </property>
-                    <property name="alignment">
-                     <set>Qt::AlignmentFlag::AlignCenter</set>
                     </property>
                    </widget>
                   </item>
@@ -194,6 +171,39 @@
                     </property>
                     <property name="textFormat">
                      <enum>Qt::TextFormat::PlainText</enum>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="2" column="2">
+                   <widget class="QSpinBox" name="HV_target_voltage_spinBox">
+                    <property name="maximum">
+                     <number>15000</number>
+                    </property>
+                    <property name="singleStep">
+                     <number>1000</number>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="3" column="1">
+                   <widget class="QLabel" name="HV_state_label">
+                    <property name="styleSheet">
+                     <string notr="true">font: 900 9pt &quot;Segoe UI&quot;;</string>
+                    </property>
+                    <property name="text">
+                     <string>OFF</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignmentFlag::AlignCenter</set>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="1" column="1" colspan="3">
+                   <widget class="QLabel" name="HV_live_current_label">
+                    <property name="text">
+                     <string>Current: NaN μA</string>
                     </property>
                     <property name="alignment">
                      <set>Qt::AlignmentFlag::AlignCenter</set>

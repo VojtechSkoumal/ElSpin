@@ -29,11 +29,13 @@ class HVController:
             self.port = self._detect_port()
             print(f"Auto-detected port: {self.port}")
 
-        self.voltage_monitor = None
-        self.voltage_monitor_thread = None
-        self.on_voltage_update = None  # Callback function for voltage updates
-        self.voltage_monitor_stop_event = threading.Event()
+        # General monitoring infrastructure
+        self.monitors = {}  # Dictionary to store monitor data: {name: {'thread': Thread, 'stop_event': Event, 'value': value, 'callback': func}}
         self.communication_lock = threading.Lock()
+        
+        # Legacy attributes for backward compatibility
+        self.voltage_monitor = None
+        self.on_voltage_update = None
 
     def connect(self):
         try: 
@@ -46,8 +48,8 @@ class HVController:
             raise HVControllerError(f"Failed to open serial port {self.port}: {e}")
 
     def close(self):
-        # Stop voltage monitor thread if running
-        self.stop_voltage_monitor()
+        # Stop all monitor threads if running
+        self._stop_all_monitors()
         
         if self.ser and self.ser.is_open:
             self.ser.close()
@@ -267,48 +269,126 @@ class HVController:
         except ValueError:
             raise HVControllerError(f"Cannot parse status register: {val_str}")
 
-    def start_voltage_monitor(self) -> None:
+    def _start_monitor(self, name: str, read_func, callback=None, interval: float = 1.0) -> None:
         """
-        Start a background thread to monitor voltage every second.
-        The latest voltage is stored in self.voltage_monitor.
+        Start a background thread to monitor a parameter.
+        
+        :param name: Unique name for this monitor (e.g., 'voltage', 'current')
+        :param read_func: Function to call to read the parameter value
+        :param callback: Optional callback function to call with the new value
+        :param interval: Time in seconds between readings (default 1.0)
         """
         if self.ser is None or not self.ser.is_open:
-            raise HVControllerError("Serial port not connected; cannot start voltage monitor")
+            raise HVControllerError("Serial port not connected; cannot start monitor")
         
-        if self.voltage_monitor_thread and self.voltage_monitor_thread.is_alive():
-            print("Voltage monitor already running")
+        if name in self.monitors and self.monitors[name]['thread'].is_alive():
+            print(f"{name.capitalize()} monitor already running")
             return
 
-        # Reset the stop event
-        self.voltage_monitor_stop_event.clear()
+        # Create stop event for this monitor
+        stop_event = threading.Event()
 
         def monitor():
-            while not self.voltage_monitor_stop_event.is_set():
+            while not stop_event.is_set():
                 try:
-                    voltage = self.get_output_voltage()
-                    self.voltage_monitor = voltage
-                    if self.on_voltage_update:
-                        self.on_voltage_update(voltage)
+                    value = read_func()
+                    self.monitors[name]['value'] = value
+                    if callback:
+                        callback(value)
                 except HVControllerError as e:
-                    print(f"Error reading voltage: {e}")
-                    self.voltage_monitor = None
+                    print(f"Error reading {name}: {e}")
+                    self.monitors[name]['value'] = None
                 
                 # Use wait instead of sleep to allow for immediate shutdown
-                if self.voltage_monitor_stop_event.wait(timeout=1.0):
+                if stop_event.wait(timeout=interval):
                     break
 
-        self.voltage_monitor_thread = threading.Thread(target=monitor, daemon=True)
-        self.voltage_monitor_thread.start()
+        thread = threading.Thread(target=monitor, daemon=True)
+        
+        # Store monitor data
+        self.monitors[name] = {
+            'thread': thread,
+            'stop_event': stop_event,
+            'value': None,
+            'callback': callback
+        }
+        
+        thread.start()
+
+    def _stop_monitor(self, name: str) -> None:
+        """
+        Stop a specific monitoring thread gracefully.
+        
+        :param name: Name of the monitor to stop
+        """
+        if name in self.monitors and self.monitors[name]['thread'].is_alive():
+            self.monitors[name]['stop_event'].set()
+            self.monitors[name]['thread'].join(timeout=2.0)
+            if self.monitors[name]['thread'].is_alive():
+                print(f"Warning: {name.capitalize()} monitor thread did not stop gracefully")
+            # Remove from monitors dictionary
+            del self.monitors[name]
+
+    def _stop_all_monitors(self) -> None:
+        """
+        Stop all monitoring threads gracefully.
+        """
+        monitor_names = list(self.monitors.keys())
+        for name in monitor_names:
+            self._stop_monitor(name)
+
+    def get_monitor_value(self, name: str):
+        """
+        Get the latest monitored value for a specific parameter.
+        
+        :param name: Name of the monitor (e.g., 'voltage', 'current')
+        :return: Latest monitored value or None if not available
+        """
+        if name in self.monitors:
+            return self.monitors[name]['value']
+        return None
+
+    def start_voltage_monitor(self, callback=None, interval: float = 1.0) -> None:
+        """
+        Start a background thread to monitor voltage.
+        The latest voltage is stored and accessible via get_monitor_value('voltage').
+        
+        :param callback: Optional callback function to call with voltage updates
+        :param interval: Time in seconds between readings (default 1.0)
+        """
+        # Use provided callback or fall back to legacy self.on_voltage_update
+        cb = callback if callback is not None else self.on_voltage_update
+        
+        # Wrapper to update legacy attribute
+        def voltage_callback(value):
+            self.voltage_monitor = value
+            if cb:
+                cb(value)
+        
+        self._start_monitor('voltage', self.get_output_voltage, voltage_callback, interval)
 
     def stop_voltage_monitor(self) -> None:
         """
         Stop the voltage monitoring thread gracefully.
         """
-        if self.voltage_monitor_thread and self.voltage_monitor_thread.is_alive():
-            self.voltage_monitor_stop_event.set()
-            self.voltage_monitor_thread.join(timeout=2.0)  # Wait up to 2 seconds
-            if self.voltage_monitor_thread.is_alive():
-                print("Warning: Voltage monitor thread did not stop gracefully")
+        self._stop_monitor('voltage')
+        self.voltage_monitor = None
+
+    def start_current_monitor(self, callback=None, interval: float = 1.0) -> None:
+        """
+        Start a background thread to monitor current.
+        The latest current is accessible via get_monitor_value('current').
+        
+        :param callback: Optional callback function to call with current updates
+        :param interval: Time in seconds between readings (default 1.0)
+        """
+        self._start_monitor('current', self.get_output_current, callback, interval)
+
+    def stop_current_monitor(self) -> None:
+        """
+        Stop the current monitoring thread gracefully.
+        """
+        self._stop_monitor('current')
     
     def get_output_voltage(self) -> float:
         """
@@ -335,5 +415,18 @@ if __name__ == "__main__":
     try:
         print("Status:", mpd.get_status())
         print("Current voltage:", mpd.get_output_voltage())
+        
+        # Example of using the general monitoring system
+        # Start monitoring voltage and current
+        mpd.start_voltage_monitor(callback=lambda v: print(f"Voltage: {v}V"))
+        mpd.start_current_monitor(callback=lambda i: print(f"Current: {i}μA"))
+        
+        # Wait for a few seconds to see monitor updates
+        time.sleep(5)
+        
+        # Get latest monitored values
+        print(f"Latest voltage: {mpd.get_monitor_value('voltage')}")
+        print(f"Latest current: {mpd.get_monitor_value('current')}")
+        
     finally:
         mpd.close()

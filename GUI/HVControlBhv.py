@@ -46,8 +46,11 @@ class HVControlBhv:
             self.ui.HV_connected_groupBox.setEnabled(True)
             self.hv_controller.set_enable_state(False)
             self.hv_controller.set_voltage(0.0)
-            self.hv_controller.on_voltage_update = self.on_voltage_update
-            self.hv_controller.start_voltage_monitor()
+            
+            # Start monitoring with callback
+            self.hv_controller.start_voltage_monitor(callback=self.on_voltage_update)
+            # Optionally start current monitoring if you have a UI element for it
+            # self.hv_controller.start_current_monitor(callback=self.on_current_update)
         except Exception as e:
             print(f"Failed to connect to HV power supply: {e}")
         
@@ -67,7 +70,16 @@ class HVControlBhv:
         self.ui.HV_state_label.setText(f'{"ON" if hv_enable_on else "OFF"}')
     
     def on_voltage_update(self, voltage):
+        """Callback for voltage monitor updates."""
         if voltage is not None:
             self.ui.HV_live_voltage_label.setText(f"Voltage: {int(voltage):,} V")
         else:
             self.ui.HV_live_voltage_label.setText("Voltage: NaN V")
+    
+    def on_current_update(self, current):
+        """Callback for current monitor updates (optional, for future use)."""
+        if current is not None:
+            self.ui.HV_live_current_label.setText(f"Current: {current:.2f} μA")
+        else:
+            self.ui.HV_live_current_label.setText("Current: NaN μA")
+            pass
