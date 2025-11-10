@@ -61,6 +61,8 @@ class HVControlBhv:
         self.ui.HV_connect_pushButton.clicked.disconnect()
         self.ui.HV_connect_pushButton.clicked.connect(self.connect)
         self.ui.HV_connected_groupBox.setEnabled(False)
+        self.ui.HV_live_voltage_label.setText("Voltage: NaN V")
+        self.ui.HV_live_current_label.setText("Current: NaN μA")
 
     def toggle_HV_enable(self):
         hv_enable_on = self.ui.HV_enable_pushButton.isChecked()
