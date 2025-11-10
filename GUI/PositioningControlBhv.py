@@ -62,14 +62,13 @@ class PositioningControlBhv:
     def toggle_positioning_power(self):
         positioning_power_on = self.ui.positioning_power_checkBox.isChecked()
         self.gpio_controller.enable_positioning_power(positioning_power_on)
-        self.ui.positioning_home_pushButton.setEnabled(positioning_power_on)
+        self.ui.positioning_home_pushButton.setEnabled(positioning_power_on and not self.ui.HV_power_checkBox.isChecked())
         if not positioning_power_on:
             self.ui.positioning_homing_done_widget.setEnabled(False)
 
     def home(self):
         self.positioning_controller.home()
-        if not self.ui.HV_power_checkBox.isChecked():
-            self.ui.positioning_homing_done_widget.setEnabled(True)
+        self.ui.positioning_homing_done_widget.setEnabled(True)
     
     def start_experiment(self):
         self.ui.positioning_experiment_running_widget.setEnabled(False)
