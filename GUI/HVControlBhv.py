@@ -49,8 +49,7 @@ class HVControlBhv:
             
             # Start monitoring with callback
             self.hv_controller.start_voltage_monitor(callback=self.on_voltage_update)
-            # Optionally start current monitoring if you have a UI element for it
-            # self.hv_controller.start_current_monitor(callback=self.on_current_update)
+            self.hv_controller.start_current_monitor(callback=self.on_current_update)
         except Exception as e:
             print(f"Failed to connect to HV power supply: {e}")
         
