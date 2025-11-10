@@ -157,7 +157,7 @@ class PositioningControlBhv:
         self.ui.positioning_stage_amplitude_spinBox.setMaximum(abs(amplitude_limit))
     
     def _hv_power_changed(self, hv_power_on):
-        self.ui.positioning_home_pushButton.setEnabled(not hv_power_on)
+        self.ui.positioning_home_pushButton.setEnabled(not hv_power_on and self.ui.positioning_power_checkBox.isChecked())
         if self.positioning_controller.grbl_streamer.is_connected():
             self.positioning_controller.set_hard_limits(not hv_power_on)
         
